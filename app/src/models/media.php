@@ -12,7 +12,7 @@ public function __construct($database) {
     $this->db = $database;
 }
 
-public function get($screenId) {
+public function getById($screenId) {
     try {
         $path = $this->dir . $screenId . "/";
 
@@ -228,6 +228,10 @@ public function getAll() {
             "error" => $e->getMessage()
         ];
     }
+}
+
+public function edit($token) {
+    return $this->db->getScreensBySessionToken($token);
 }
 
 public function action($action, $params) {
