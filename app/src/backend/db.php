@@ -380,9 +380,17 @@ public function getUserByEmail($email) {
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(["email" => $email]);
 
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if(!$result) {
+            return [
+                "success" =>  false,
+            ];
+        }
+
         return [
             "success" => true,
-            "data" => $stmt->fetch(PDO::FETCH_ASSOC)
+            "data" => $result
         ];
         
     } catch (PDOException $e) {

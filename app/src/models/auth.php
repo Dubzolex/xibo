@@ -8,7 +8,7 @@ public function __construct($database) {
     $this->db = $database;
 }
 
-private function connect($email, $password) {  
+public function connect($email, $password) {  
     $user = null;
 
     try {
@@ -20,7 +20,7 @@ private function connect($email, $password) {
         }
 
         $user = $this->db->getUserByEmail($email);
-        if(!$user) {
+        if(!$user["success"]) {
             return [
                 "success" => false,
                 "message" => "Aucun utilisateur trouvé."
@@ -36,14 +36,20 @@ private function connect($email, $password) {
     }
         
     try {
-        if ($user && password_verify($password, $user['password'])) {
+        
+        if (password_verify((string)$password, $user['data']['password'] ?? null)) {
             $token = bin2hex(random_bytes(32));
-            $date = new DateTime(); 
+            
+            $date = new DateTime();
+            
+            $expiresAt = (clone $date)->modify("+7 days")->format("Y-m-d H:i:s");
+            
             $session = [
-                "user_id" => $user["id"],
-                "token" => $token,
-                //"expires_at" => $date->modify("+7 days")->format("Y-m-d H:i:s")
+                "user_id" => $user["data"]["id"] ?? null,
+                "token" => $token ?? null,
+                "expires_at" => $expiresAt
             ];
+            
 
             $this->db->addSession($session);
         
@@ -51,15 +57,17 @@ private function connect($email, $password) {
                 "success" => true,
                 "message" => "Connexion réussie.",
                 "data"=> [
-                    "token" => $token,
-                    "hash" => $user['password']
+                    "token" => $token
+                    //"hash" => $user['data']['password'] ?? null
                 ]
             ];
 
         } else {
             return [
                 "success" => false,
-                "message" => "Mot de passe incorrect."
+                "message" => "Mot de passe incorrect.",
+                "password" => $password,
+                "user" => $user
             ];
         }
 
@@ -72,11 +80,11 @@ private function connect($email, $password) {
     }
 }
 
-function disconnect($token) {
-    return null;
+public function disconnect($token = null) {
+    return [];
 }
 
-function verify($token, $role) {
+public function verify($token, $role = 1) {
     $user = null;
     
     try {
@@ -121,30 +129,6 @@ function verify($token, $role) {
             "error" => $e->getMessage()
         ];
     }
-}
-
-public function action($act, $params) {
-
-    switch($act) {
-
-        case "connect":
-            return $this->connect($params["email"], $params["password"]);
-            break;
-
-        case "disconnect":
-            return $this->disconnect($params["token"]);
-            break;
-
-        case "verify":
-            return $this->verify($params["token"], $params["role"]);
-            break;
-
-        default:
-            return [
-                //"alert" => "Un problème est survenu lors de l'authentification."
-            ];
-    }
-
 }
 
 }

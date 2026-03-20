@@ -7,95 +7,80 @@ private $db;
 public function __construct($database) {
     $this->db = $database;
 }
-private function getScreens() {
+public function getScreens() {
     $html = '
         <div class="fx-row jc-center p-20">
-            <div class="fx-row container w-800 px-20 py-20 jc-between tools">
+            <div class="fx-row container w-800 px-20 py-20 jc-between tools gap-20">
                 <div class="fx-row gap-20">
-                    <input id="email" type="email" placeholder="email" >
-                    <input id="password" type="password" placeholder="password">
+                    <input id="name" type="text" placeholder="name">
                 </div>
-                <button class="action" id="add-user">Add</button>
+                <button class="action" id="add-screen">Add</button>
             </div>
         </div>
-        <div id="content" class="fx-row jc-center grow"></div>';
+        <div class="fx-row jc-center grow p-20">
+            <div id="content-screen" class="fx-col grow w-600 gap-40"></div>
+        </div>';
+
+    $screen = $this->db->getScreens();
+
+    $result = array_map(function($s) {
+        return [
+            "id"    => $s["id"] ?? $s["created_at"] ?? null,
+            "name"  => $s["name"] ?? null,
+            "running" => $s["is_running"] ?? null,
+            "updating" => $s["is_updating"] ?? null,
+            "controlled" => $s["is_controlled"] ?? null
+        ];
+    }, $screen['data']);
 
     return [
         "success" => true,
         "html"=> $html,
-        "data" => $this->db->getScreens()
+        "data" => $result
     ];
 }
 
-private function getUsers() {
+public function getUsers() {
     $html = '
         <div class="fx-row jc-center p-20">
-            <div class="fx-row container w-800 px-20 py-20 jc-between tools">
-                <div class="fx-row gap-20">
+            <div class="fx-row container w-800 px-20 py-20 jc-between tools gap-20 ai-center">
+                <div class="fx-row gap-20 wrap">
                     <input id="email" type="email" placeholder="email" >
                     <input id="password" type="password" placeholder="password">
                 </div>
                 <button class="action" id="add-user">Add</button>
             </div>
         </div>
-        <div id="content" class="fx-row jc-center grow"></div>';
+        <div class="fx-row jc-center grow p-20">
+            <div id="content-user" class="fx-col grow w-600 gap-40"></div>
+        </div>';
 
-    $users = $this->db->getUsers();
+    $user = $this->db->getUsers();
 
-    $users = array_map(function($user) {
+    $result = array_map(function($user) {
         return [
-            "id"    => $user["id"] ?? $user["created_at"] ?? null,
+            "id"    => $user["id"] ?? null,
             "name"  => $user["name"] ?? null,
             "email" => $user["email"] ?? null,
-            "password" => $user["password"] ?? null
         ];
-    }, $users['data']);
-
+    }, $user['data']);
     
     return [
         "success" => true,
         "html"=> $html,
-        "data" => $users
+        "data" => $result
     ];
 }
 
-private function saveUser($data) {
-
-    $data["password"] = bin2hex($data["password"]);
+public function addUser($data) {
+    $data["password"] = password_hash($data["password"], PASSWORD_DEFAULT);
     return $this->db->addUser($data);
 }
 
 
 
-
-
-
-
-
-public function action($act, $params) {
-
-    switch($act) {
-
-        case "users":
-            return $this->getUsers();
-            break;
-
-
-        case "add":
-            return $this->saveUser($params);
-            break;
-
-        
-
-        default:
-            return [
-                "success"=> false,
-                "error"=> "control"
-            ];
-    }
-
 }
 
-}
+
 
 ?>
