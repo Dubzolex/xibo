@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="./styles.css" rel="styleSheet">
+    <title>History</title>
+</head>
+<body>
+    <header class="fx-col">
+        <div class="fx-row gap-20">
+            <div class="fx-row jc-center">
+                <h2>Digital Signage</h2>
+            </div>
+            <nav class="fx-row jc-evenly grow ai-center">
+                <div><a href="./"><h4>Screens Preview</h4></a></div>
+                <div><a href="./screen/"><h4>Live</h4></a></div>
+                <div><a href="dashboard.html"><h4>History</h4></a></div>
+                <div><a href="settings.html"><h4>Settings</h4></a></div>
+            </nav>
+        </div>
+    </header>
+    <section class="fx-col">
+
+            <div class="fx-row jc-center">
+                <div class="fx-col gap-40 w-1000">
+                    <div class="fx-row jc-between tableau">
+                        <div class="fx-col gap-20" >
+                            <h3 style="width: 100%">Screen name</h3>
+                            <select id="screen"></select>
+                        </div>
+                        <h3>Media filename</h3>
+                        <h3>Broadcast schedule (UTC+1)</h3>
+                    </div>
+                    <div id="container" class="ai-between gap-20"></div>
+                </div>
+            </div>
+    </section>
+
+<script>
+
+    let logs = null
+    let config = null
+
+    const readConfig = async () => {
+        //config
+        const file = await fetch('/config.json', { cache: 'no-store' });
+        config = await file.json()
+        await createSelect()
+        await readLogs()
+    }
+    readConfig()
+
+
+
+    const readLogs = async () => {
+        //logs
+        const file = await fetch('/logs/log.json', { cache: 'no-store' });
+        logs = await file.json()
+        //console.log(logs)
+
+        await showElement()
+        await new Promise(r => setTimeout(r, 20000))
+        await readLogs()
+    }
+
+    const createSelect = async () => {
+        const select = document.getElementById("screen")
+        //console.log(config)
+        if(select){
+            select.innerHTML = `<option value="">Choose a screen</option>` + config.map(c => {
+                return `<option value="${c.id}">${c.name}</option>`
+            }).join("")
+
+            select.addEventListener("change", async (event) => {
+               await showElement()
+            })
+        }
+    }
+
+
+    const showElement = async () => {
+        const div = document.getElementById("container")
+        if(div){
+            const select = document.getElementById("screen")
+            let idScreen = null
+            if(select && select.value){
+                idScreen = select.value
+            }
+
+            //console.log(logs)
+            
+            div.innerHTML = logs.filter(p => (idScreen == null) || (p.id == idScreen))
+            .filter(a => a.id).map(a => {
+                const s = config.find(b => b.id == a.id)
+
+                //console.log(a.timeStamp) // undefined
+
+                const datetime = new Intl.DateTimeFormat("fr-FR", {
+                    timeZone: "Europe/Paris",
+                    dateStyle: "short",
+                    timeStyle: "medium",
+                }).format(new Date(a.timeStamp));
+
+                return `
+                    <div class="fx-row jc-between tableau">
+                        <div>${s?.name}</div>
+                        <div>${a.media}</div>
+                        <div>${datetime ? datetime : ""}</div>
+                    </div>
+
+                `}).join("")
+        }
+    }
+    
+    //lancer les logs
+    //  chmod 777 /srv/dev-disk-by-uuid-4d1eafa4-ed40-4d69-bf8c-6784eb88a3ce/xibo/Logs
+    //  docker restart php
+
+</script>
+
+<style>
+#container{
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.tableau :nth-child(1){
+    width: 40%;
+}
+
+.tableau :nth-child(2){
+    width: 40%;
+}
+
+.tableau :nth-child(3){
+    width: 30%;
+}
+
+
+</style>
+
+
+
+</body>
+</html>

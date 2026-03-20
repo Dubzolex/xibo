@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="../styles.css" rel="styleSheet">
+    <title>Live</title>
+</head>
+<body>
+    <div class="fx-col grow relative" style="height: 100vh">
+        <div id="cross" class="absolute">X</div>
+        <div id="container" class="fx-col jc-evenly ai-center grow"></div>
+    </div>
+<script>
+
+    
+
+    const diaporama = async () => {
+        //data
+        const param = new URLSearchParams({ action: "getScreens" });
+        const data =  await fetch(`/backend/api.php?${param.toString()}`, { cache: 'no-store' }).then(r => r.json())
+        console.log(data)
+
+        //Button
+        const div = document.getElementById("container")
+        if(div && data){
+            div.innerHTML = data.filter(s => s.actived).map(item =>{
+                return `<button id=${item.id}>${item.name}</button>`
+            }).join("")
+        }
+        
+        for (let item of data) {
+            document.getElementById(item.id)?.addEventListener("click", () => {
+                console.log(item)
+                window.location.href = `${item.page}?s=${item.id}`
+            })
+        }
+
+        //Identifiant Ecran
+        const index = localStorage.getItem("screen")
+        if(index){
+            //Delay
+            await new Promise(resolve => setTimeout(resolve, 10000))
+            const screen = data.find(s => s.id == index)
+            if(screen){
+                //window.location.href = `${screen.page}?s=${index}`
+            }
+        }
+    }
+    
+    diaporama()
+    
+</script>
+
+<style>
+
+    #cross{
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 20px;
+        cursor: pointer;
+        right: 20px;
+        top: 20px;
+        font-weight: bold;
+    }
+
+    button{
+        min-width: 300px;
+        padding: 20px;
+        border-radius: 10px;
+        border: none;
+        background-color: rgb(16, 105, 143);
+        color: white;
+        cursor: pointer;
+        font-size: 32px;
+
+        transition: 
+            background-color 0.25s ease,
+            transform 0.15s ease,
+            box-shadow 0.15s ease;
+        box-shadow: 0 20px 20px rgba(0,0,0,0.25);
+    }
+    button:hover{
+        background-color: rgb(9, 56, 94);
+        transform: translateY(-10px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.35);
+        scale: 1.2;
+    }
+
+    button:active{
+        transform: translateY(0);
+        box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+    }
+</style>
+
+<script>
+    document.getElementById("cross").addEventListener("click", () => {
+        localStorage.removeItem("id")
+        window.location.href = "../"
+    })
+</script>
+</body>
+</html>

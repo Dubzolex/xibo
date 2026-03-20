@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="../frontend/styles.css" rel="styleSheet">
+    <title>Login</title>
+</head>
+<body>
+    <header>
+        <h1>XIBO</h1>
+        <nav id="nav"></nav>
+    </header>
+    <section class="fx-col fx-center">
+        <div class="fx-col jc-between ai-center container w-400 h-500 p-20">
+            <h3>Welcome !</h3>
+            <div class="fx-col ai-center gap-40">
+                <div class="fx-col gap-10">
+                    <div>Email :</div>
+                    <input type="email" id="input-email" placeholder="">
+                </div>
+                <div class="fx-col gap-10">
+                    <div>Password :</div>
+                    <input type="password" id="input-password" placeholder="">
+                </div>
+                <div id="status"></div>
+            </div>
+            <div class="fx-col ai-center gap-20">
+                <a class="link" href="" >Create account</a>
+                <a class="link" href="">Forget password</a>
+            </div>
+            <button id="login" class="action">Login</button>
+        </div>
+    </section>
+</body>
+<script src="../frontend/menu.js" type="module"></script>
+<script src="script.js" type="module"></script>
+</html>

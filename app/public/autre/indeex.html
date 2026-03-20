@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/src/frontend/styles.css" rel="styleSheet">
+    <title>Home</title>
+
+</head>
+<body>
+    <header class="fx-col">
+        <div class="fx-row gap-20">
+            <div class="fx-row jc-center">
+                <h2>Digital Signage</h2>
+            </div>
+            <nav class="fx-row jc-evenly grow ai-center">
+                <div><a href="/"><h4>Home</h4></a></div>
+            
+            </nav>
+        </div>
+    </header>
+    <section id="list-screens" class="fx-col gap-100">
+        
+    </section>
+    
+</body>
+<script type="module">
+    import { isImage, isVideo } from "./fronted/script.js"
+
+    let data = null
+
+    const read = async () => {
+        data = await fetch('/backend/medias.php', { cache: 'no-store' }).then(r => r.json())
+        await showScreen()
+    }
+    read()
+
+    const showScreen = async () => {
+        const div = document.getElementById("list-screens")
+        div.innerHTML = data.filter(f => f.managed).map((s, i) => {
+            return `
+            <div class="fx-col gap-100">
+                <div class="fx-col gap-60">
+                    <div class="fx-col ai-center">
+                        <div class="fx-row jc-between ai-center container w-1000 ai-center">
+                            <div class="fx-row gap-20">
+                                <div>#${s.id}</div>
+                                <h3>${s.name}</h3>
+                            </div>
+                            <div class="fx-row gap-10">
+                                <div>online :</div>
+                                <div class="${s.actived == 1 ? "green" : "red"}">
+                                    <strong>${s.actived == 1 ? "ON" : "OFF"}</strong>
+                                </div>
+                            </div>
+                            <button><a href="./manage.html?screen=${s.id}">Edit</a></button>
+                        </div>
+                    </div>
+                    <div id="${s.id}" class="fx-row jc-evenly gap-80 wrap">${
+                        s.images.map(m => {
+                            const url = `./images/${s.id}/${m}`;
+
+                            if (isImage(m)) {
+                                return `
+                                    <div class="fx-col ai-center gap-10">
+                                        <img src="${url}">
+                                        <p>${m}</p>
+                                    </div>
+                                `
+                            } else if (isVideo(m)) {
+                                return `
+                                    <div class="fx-col ai-center gap-10">
+                                        <video autoplay muted playsinline>
+                                            <source src="${url}">
+                                        </video>
+                                        <p>${m}</p>
+                                    </div>
+                                `
+                            }
+                            return null
+                        }).join("")
+                        }
+                    </div>
+                </div>
+                <div class="fx-col ai-center">
+                    <div class="fx-row w-1000">
+                        <hr>
+                    </div>
+                </div>
+            </div>
+            `
+        }).join("")
+    }
+   
+</script>
+<style>
+    img{
+        max-width: 240px;
+        max-height: 240px;
+    }
+    video{
+        max-width: 240px;
+        width: 100%;
+        aspect-ratio: 16/9;
+        object-fit: cover;
+    }
+</style>
+</html>

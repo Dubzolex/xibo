@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diaporama</title>
+</head>
+<body>
+    <div class="container">
+        <div id="media" class="media"></div>
+    </div>
+    
+<script>
+let data = null
+
+const TRANSITION_DURATION = 500 // ms
+
+const initApp = async () => {
+    try {
+        const params = new URLSearchParams(window.location.search)
+        const id = params.get("s")
+
+        if (!id) {
+            window.location.href = "./"
+            return
+        }
+
+        localStorage.setItem("screen", id)
+        await startLoop()
+
+    } catch(e) {
+        noMediaFound()
+        await wait(1000000)
+    }
+}
+
+const startLoop = async () => {
+    while (true) {
+        try {
+            await load()
+            await addLogs()
+            await showMedia()
+
+        } catch (e) {
+            console.error("Erreur dans la boucle d'affichage :", e)
+            await wait(10000)
+            window.location.reload()
+        }
+    }
+}
+
+const load = async () => {
+    try {
+        const file = await fetch(`../backend/medias.php`, { cache: "no-store" })
+        data = await file.json()
+        //console.log("Data :", data)
+        await showMedia()
+
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+const showMedia = async () => {
+    const container = document.getElementById("media")
+    const screen = data.find(s => s.id == localStorage.getItem("screen"))
+    
+    if(!(screen && screen.images && (screen.images.length > 0))) {
+        noMediaFound()
+        await wait(10000)
+        return
+    }
+
+    try {
+
+        if(screen.restart == 1) {
+            window.location.reload()
+        }
+
+        for (let item of screen.images) {
+            try {
+                const url = `../images/${screen.id}/${item}`
+        
+                if (await fileExists(url)) {
+                        // IMAGE
+                    if (item.match(/\.(png|jpg|jpeg)$/i)) {
+                        const img = document.createElement("img")
+                        img.src = url
+            
+                        await showElement(container, img, (screen.duration ?? 10) * 1000)
+                    }
+            
+                    // VIDEO
+                    if (item.match(/\.(mp4)$/i)) {
+                        const video = document.createElement("video")
+                        video.src = url
+                        video.autoplay = true
+                        video.muted = true
+                        video.playsInline = true
+            
+                        await showElement(container, video)
+            
+                        await new Promise(resolve => {
+                            video.onended = resolve
+                            video.onerror = resolve
+                        })
+            
+                        await hideElement(video)
+                    }
+                }
+        
+            } catch(e) {
+                console.error(e)
+            }
+        }
+
+    } catch(e) {
+        console.error(e)
+    }
+
+    await wait(1000)
+}
+
+const addLogs = async (filename = null) => {
+
+}
+
+const showElement = async (container, element, duration = 0) => {
+    container.innerHTML = ""
+    container.appendChild(element)
+
+    element.classList.add("media-item")
+
+    // Force repaint
+    element.offsetHeight
+    element.classList.add("show")
+
+    if (duration > 0) {
+        await wait(duration)
+        await hideElement(element)
+    }
+}
+
+const hideElement = async (element) => {
+    element.classList.remove("show")
+    await wait(TRANSITION_DURATION)
+}
+
+const noMediaFound = () => {
+    try {
+        document.getElementById("media").innerHTML = `<p>No media found (png, jpg, mp4...)</p>`
+
+    } catch(e) {
+        console.error(e)
+    }
+}
+
+const fileExists = async (url) => {
+    try {
+        const r = await fetch(url, { method: "HEAD", cache: "no-store" })
+        return r.ok
+    } catch {
+        return false
+    }
+}
+
+const wait = (ms) => new Promise(r => setTimeout(r, ms))
+
+initApp()
+
+</script>
+  
+<style>
+body {
+    margin: 0;
+    background: black;
+    cursor: none;
+}
+
+#media {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* MEDIA ELEMENTS */
+.media-item {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    will-change: opacity;
+}
+
+.media-item.show {
+    opacity: 1;
+}
+
+p {
+    color: white;
+    font-size: 60px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: center;
+}
+</style>
+
+</body>
+</html>

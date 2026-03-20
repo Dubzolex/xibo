@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="../../frontend/styles.css" rel="styleSheet">
+    <title>Home</title>
+
+</head>
+<body>
+    <header>
+        <h1>XIBO</h1>
+        <nav id="nav"></nav>
+    </header>
+    <section class="fx-row">
+        <aside class="fx-col scroll-y py-20 gap-20">
+            <div class="fx-col gap-20 ai-center">
+                <h3>Settings</h3>
+            </div>
+            <div id="list-screen" class="fx-col grow gap-50 jc-evenly py-20">
+                <button id="users" class="link" >Users</button></a>
+                <button id="screens" class="link" >Screens</button></a>
+                <button id="permissions" class="link" >Permissions</button></a>
+                <button id="sessions" class="link" >Sessions</button></a>
+            </div>
+        </aside>
+        <main id="main" class="fx-col grow scroll-y gap-50">
+            
+        </div>
+        </main>
+    </section>
+    
+</body>
+
+<script src="../../frontend/menu.js" type="module"></script>
+<script src="script.js" type="module"></script>
+<style>
+    img{
+        max-width: 160px;
+        max-height: 160px;
+    }
+
+    video{
+        max-width: 160px;
+        width: 100%;
+        aspect-ratio: 16/9;
+        object-fit: cover;
+    }
+</style>
+</html>

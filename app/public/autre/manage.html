@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/src/frontend/styles.css" rel="styleSheet">
+    <title>Home</title>
+
+</head>
+<body>
+    <header class="fx-col">
+        <div class="fx-row gap-20">
+            <div class="fx-row jc-center">
+                <h2>Digital Signage</h2>
+            </div>
+            <nav class="fx-row jc-evenly grow ai-center">
+                <div><a href="/"><h4>Home</h4></a></div>
+            </nav>
+        </div>
+    </header>
+    <section class="fx-col ai-center gap-80">
+        <div class="fx-row w-1000 jc-between ai-center gap-20 container">
+            <div id="name"></div>
+            <div class="fx-row gap-20 ai-center gap-10">
+                <input 
+                    type="file" 
+                    id="file" 
+                    name="file[]" 
+                    accept=".png, .jpg, .jpeg, .mp4" 
+                    multiple
+                >
+                <button id="upload">Upload</button>
+            </div>
+
+            <button id="delete">Delete</button>
+        </div>
+        <div id="list-images" class="fx-row w-1000 jc-evenly gap-100 wrap">
+            
+        </div>
+    </section>
+    
+</body>
+<script type="module">
+    import { isImage, isVideo } from "./fronted/script.js"
+
+    let screenId = null
+    let data = null
+    let config = null
+
+    const initApp = async () => {
+        const params = new URLSearchParams(window.location.search)
+        screenId = params.get("screen")
+
+        if (!screenId) {
+            window.location.href = "./"
+            return
+        }
+        await read()
+        await showScreen()
+    }
+    
+    const read = async () => {
+        data = await fetch('/backend/medias.php', { cache: 'no-store' }).then(r => r.json())
+        config = data.find(f => f.id == screenId)
+        await showImages()
+    }
+
+    const showScreen = async () => {
+        const name = document.getElementById("name")
+        name.innerHTML = `
+            <div class="fx-row gap-20 ai-center">
+                <div>#${screenId}</div>
+                <div><strong>${config.name}<strong></div>
+            </div>`
+    }
+
+    const showImages = async () => {
+        const div = document.getElementById("list-images")
+
+        if(config.images.length == 0) {
+            div.innerHTML = `<em>No images found...</em>`
+            return
+        }
+
+        div.innerHTML = config.images.map(m => {
+            const url = `./images/${screenId}/${m}`
+                
+                if (isImage(m)) {
+                    return `
+                        <div class="fx-col ai-center gap-10">
+                            <img src="${url}">
+                            <div class="fx-row ai-center gap-20">
+                                <input id ="${m}" type="checkbox">
+                                <p>${m}</p>
+                            </div>
+                        </div>
+                    `
+                } else if (isVideo(m)) {
+                    return `
+                        <div class="fx-col ai-center gap-10">
+                            <video autoplay muted playsinline>
+                                <source src="${url}">
+                            </video>
+                            <div class="fx-row ai-center gap-20">
+                                <input id ="${m}" type="checkbox">
+                                <p>${m}</p>
+                            </div>
+                        </div>
+                    `
+                }
+                return null
+            }).join("")
+    }
+
+
+    // ----------------------------
+    // UPLOAD D'IMAGES
+    // ----------------------------
+
+    const uploadImage = async () => {
+        const input = document.getElementById("file")
+
+        if (!input.files.length) {
+            alert("No image selected !")
+            return;
+        }
+
+        // Ajouter chaque fichier
+        const formData = new FormData();
+        for (let file of input.files) {
+            formData.append("file[]", file);
+        }
+
+        try {
+            //Construction url
+            const params = new URLSearchParams()
+            params.append("action", "upload")
+            params.append("id", screenId)
+
+            const response = await fetch(`/backend/api/images.php?${params.toString()}`, {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await response.text();
+
+            await read()
+
+        } catch (e) { 
+            alert("Un problème est survenu !")
+            console.error(e)
+        }
+    }
+
+    document.getElementById("upload").addEventListener("click", async (e) => {
+        e.preventDefault();
+        await uploadImage()
+    })
+
+    
+    // ----------------------------
+    // DELETE D'IMAGES
+    // ----------------------------
+
+    const deleteImage = async () => {
+        let mediaSelected = []
+
+        for (let item of config.images) {
+            const box = document.getElementById(item)
+
+            if (box && box.checked) {
+                mediaSelected.push(item)
+            }
+        }
+
+        if(mediaSelected.length == 0){
+            alert("No image selected !")
+            return
+        }
+
+        const ok = confirm("Voulez-vous vraiment supprimer ces images ? " + mediaSelected.join(" / "))
+        if(!ok){
+            return
+        }
+
+        try {
+            // Construction url
+            const params = new URLSearchParams()
+            params.append("action", "delete")
+            params.append("id", screenId)
+            
+            mediaSelected.forEach(file => {
+                params.append('file[]', file)
+            })
+            
+            const response  = await fetch(`/backend/api/images.php?${params.toString()}`, {
+                cache: 'no-store'
+            })
+            const result = await response.text()
+
+            await read()
+            
+        } catch(e){
+            alert("Un problème est survenu !")
+            console.error(e)
+        } 
+    }
+
+    document.getElementById("delete").addEventListener("click", async (e) => {
+        e.preventDefault()
+        await deleteImage()
+    })
+
+    initApp()
+        
+</script>
+<style>
+    img{
+        max-width: 160px;
+        max-height: 160px;
+    }
+
+    video{
+        max-width: 160px;
+        width: 100%;
+        aspect-ratio: 16/9;
+        object-fit: cover;
+    }
+</style>
+</html>
