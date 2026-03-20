@@ -1,4 +1,4 @@
-import { isImage, isVideo } from "/frontend/utils.js"
+import { isImage, isVideo } from "../../frontend/utils.js"
 
 
 let screenId = null
@@ -220,15 +220,22 @@ const apiFetch = async () => {
 
 
     // screens
-    let req = new FormData()
-    req.append("module", "media")
-    req.append("action", "allow")
-    
-    let res = await fetch(`../../api.php`, {
+    let req = {}
+        
+    let res = await fetch(`../../api.php?action=MEDIA_EDIT`, {
         method: "POST",
-        body: req
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(req)
     })
+
     res = await res.json()
+
+    console.log(res)
+
+    const div = document.getElementById("main")
+
 
     console.log(res)
 

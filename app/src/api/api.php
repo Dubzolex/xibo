@@ -50,7 +50,7 @@ $routes = [
     },
 
     "MEDIA_EDIT" => function($d) use ($media) {
-        return $media->edit($d["token"]);
+        return $media->edit($d["token"] ?? null);
     },
 
     "MEDIA_UPLOAD" => function($d) use ($media) {

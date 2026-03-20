@@ -230,7 +230,8 @@ public function getAll() {
     }
 }
 
-public function edit($token) {
+public function edit($token = null) {
+    return $this->db->getScreens();
     return $this->db->getScreensBySessionToken($token);
 }
 
