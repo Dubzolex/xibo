@@ -88,6 +88,10 @@ $routes = [
 
     "CONTROL_ADD_USER" => function($d) use ($control) {
         return $control->addUser($d);
+    },
+
+    "CONTROL_GET_SESSION" => function($d) use ($control) {
+        return $control->getSession();
     }
 ];
 

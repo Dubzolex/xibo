@@ -115,6 +115,26 @@ const showScreen = async (screens) => {
 }
 
 
+/* session */
+
+const showSession = async (sessions, users) => {
+    const div = document.getElementById("content-session")
+
+    if(div) {
+        div.innerHTML = sessions.map(s => {
+            return `
+            <div class="fx-row p-20 container jc-between ai-center">
+                <div>${users.find(u => u.id == s.userId).email}</div>
+                <div>${s.connectedAt}</div>
+                <div>${s.expiresAt}</div>
+            </div>
+            `
+        }).join("")
+    }
+}
+
+
+
 
 
 
@@ -203,6 +223,7 @@ const api = async () => {
         div.innerHTML = res.html
         showUser(res.data)
         showScreen(res.data)
+        showSession(res.data.sessions, res.data.users)
     }
 
 }
