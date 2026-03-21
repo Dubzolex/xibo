@@ -9,73 +9,67 @@ public function __construct($database) {
 }
 
 public function connect($email, $password) {  
-    $user = null;
+    if(empty($email) or empty($password)) {
+        return [
+            "success" => false,
+            "message" => "Remplir tous les champs.",
+        ];
+    }
 
     try {
-        if(empty($email) or empty($password)) {
-            return [
-                "success" => false,
-                "message" => "Remplir tous les champs.",
-            ];
-        }
-
         $user = $this->db->getUserByEmail($email);
-        if(!$user["success"]) {
+        if(!$user) {
             return [
                 "success" => false,
                 "message" => "Aucun utilisateur trouvé."
             ];
         }
         
-    } catch(Exception $e) {
-        return [
-            "success" => false,
-            "message" => "Connexion impossible.",
-            "error" => $e->getMessage(),
-        ];
-    }
-        
-    try {
-        
-        if (password_verify((string)$password, $user['data']['password'] ?? null)) {
+        if (isset($user["password"]) && password_verify((string)$password, $user['password'])) {
             $token = bin2hex(random_bytes(32));
             
             $date = new DateTime();
-            
             $expiresAt = (clone $date)->modify("+7 days")->format("Y-m-d H:i:s");
             
-            $session = [
-                "user_id" => $user["data"]["id"] ?? null,
-                "token" => $token ?? null,
-                "expires_at" => $expiresAt
-            ];
+            try {
+                $session = [
+                    "user_id" => $user["id"] ?? throw new Exception("No user id."),
+                    "token" => $token ?? throw new Exception("No token generate."),
+                    "expires_at" => $expiresAt
+                ];
             
+                $this->db->addSession($session);
 
-            $this->db->addSession($session);
+            } catch (PDOException $e) {
+                return [
+                    "success"=> false,
+                    "message" => "Session perdu.",
+                    "error"=> $e->getMessage()
+                ];
+            }
         
             return [
                 "success" => true,
                 "message" => "Connexion réussie.",
                 "data"=> [
                     "token" => $token
-                    //"hash" => $user['data']['password'] ?? null
+                    //"hash" => $user['password'] ?? null
                 ]
-            ];
-
-        } else {
-            return [
-                "success" => false,
-                "message" => "Mot de passe incorrect.",
-                "password" => $password,
-                "user" => $user
             ];
         }
 
-    } catch (Exception $e) {
         return [
-            "success"=> false,
-            "message" => "Session perdu.",
-            "error"=> $e->getMessage()
+            "success" => false,
+            "message" => "Mot de passe incorrect.",
+            //"password" => $password,
+            //"user" => $user
+        ];
+
+    } catch(PDOException $e) {
+        return [
+            "success" => false,
+            "message" => "Problème serveur",
+            "error" => $e->getMessage(),
         ];
     }
 }
@@ -85,8 +79,6 @@ public function disconnect($token = null) {
 }
 
 public function verify($token, $role = 1) {
-    $user = null;
-    
     try {
         $user = $this->db->getUserByToken($token);
 
@@ -94,18 +86,25 @@ public function verify($token, $role = 1) {
             return [
                 "success" => false,
                 "message" => "Aucun utilisateur trouvé.",
+                "alert" => "Token invalide.",
+                "url" => "/login/"
             ];
         }
 
     } catch(Exception $e) {
         return [
             "success" => false,
-            "message" => "Erreur pour récupérer le compte",
-            "error" => $e->getMessage()
+            "message" => "Problème serveur.",
+            "error" => $e->getMessage(),
+            "alert" => "Token invalide.",
+            "url" => "/login/"
         ];
     }
+}
 
-    try {
+
+/*
+try {
         if ((int)$user["role_id"] >= (int)$role) { 
             return [
                 "success" => true,
@@ -129,8 +128,7 @@ public function verify($token, $role = 1) {
             "error" => $e->getMessage()
         ];
     }
-}
-
+*/
 }
 
 ?>

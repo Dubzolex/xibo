@@ -10,10 +10,20 @@ export const isVideo = (filename) => {
     return extensions.includes(ext)
 }
 
-export const status = async (data, element = "status") => {
+export const showStatus = async (data, element = "status") => {
+    if(data?.url && data?.alert) {
+        localStorage.clear()
+        window.location.href = data.url
+        return
+    }    
+    
+    if(data?.url) {
+        window.location.href = data.url
+        return
+    }
+
     if(data?.alert) {
-        alert(data.message)
-        console.warn(data.error)
+        alert(data.alert)
         return
     }
 
@@ -36,13 +46,17 @@ export const status = async (data, element = "status") => {
 }
 
 export const verifySession = async () => {
-    const token = localStorage.getItem("token")
-    if(!token) {
-        window.location.href = "/login/"
+    let req = {
+        token: localStorage.getItem("token")
     }
-    const response = await fetch(`/backend/api/session.php?token=${token}`).then(r => r.json())
-    console.warn(response)
-    if(response == null) {
-        window.location.href = "/login/"
-    }
+
+    let res = await fetch(`/api.php?action=AUTH_VERIFY`, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(req)
+    })
+
+    showStatus(res)
 }

@@ -10,10 +10,10 @@ private $username = "user";
 private $password = "password";
 
 // ========================================
-// INIT
+// SINGLETON
 // ========================================
 
-public function __construct() {
+private function __construct() {
     try {
         // Connexion à MariaDB via PDO
         $this->pdo = new PDO(
@@ -26,88 +26,42 @@ public function __construct() {
     }
 }
 
+public static function getInstance() {
+    if (self::$instance === null) {
+        self::$instance = new self();
+    }
+    return self::$instance;
+}
+
 // ========================================
 // ADD
 // ========================================
 
 private function addData($table, $data) {
-    if (isset($data['id'])) {
-        unset($data['id']);
-    }
-
     $columns = array_keys($data);
     $placeholders = array_fill(0, count($columns), "?");
-    $values = array_values($data);
 
     $sql = "INSERT INTO `$table` (`" . implode("`, `", $columns) . "`) 
             VALUES (" . implode(", ", $placeholders) . ")";
 
-    try {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($values);
-
-        return [
-            "success" => true,
-            "data" => [
-                "id" => $this->pdo->lastInsertId()
-            ]
-        ];
-
-    } catch (PDOException $e) {
-        throw $e;
-    }
+    $stmt = $this->pdo->prepare($sql);
+    return $stmt->execute(array_values($data));
 }
 
 public function addUser($data) {
-    try {
-        return $this->addData("users", $data);
-
-    } catch(PDOException $e) {
-        return [
-            "success" => false,
-            "message" => "Problème lors de l'ajout d'un utilisateur.",
-            "error" => $e->getMessage()
-        ];
-    }
+    return $this->addData("users", $data);
 }
 
 public function addScreen($data) {
-    try {
-        return $this->addData("screens", $data);
-
-    } catch(PDOException $e) {
-        return [
-            "success" => false,
-            "message" => "Problème lors de l'ajout d'un écran.",
-            "error" => $e->getMessage()
-        ];
-    }
+    return $this->addData("screens", $data);
 }
 
 public function addSession($data) {
-    try {
-        return $this->addData("sessions", $data);
-
-    } catch(PDOException $e) {
-        return [
-            "success" => false,
-            "message" => "Problème lors de l'authentification.",
-            "error" => $e->getMessage()
-        ];
-    }
+    return $this->addData("sessions", $data);
 }
 
 public function addPermission($data) {
-    try {
-        return $this->addData("permissions", $data);
-
-    } catch(PDOException $e) {
-        return [
-            "success" => false,
-            "message" => "Problème lors de l'ajout d'un accès.",
-            "error" => $e->getMessage()
-        ];
-    }
+    return $this->addData("permissions", $data);
 }
 
 
@@ -115,7 +69,7 @@ public function addPermission($data) {
 // UPDATE
 // ========================================
 
-private function updateUserById($userId, $data) {
+public function updateUserById($userId, $data) {
     $setParts = [];
     $values = [];
 
@@ -123,26 +77,15 @@ private function updateUserById($userId, $data) {
         $setParts[] = "`$col` = ?";
         $values[] = $val;
     }
-    $sql = "UPDATE users SET " . implode(", ", $setParts) . " WHEREE users.id = `$userId`";
 
-    try {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($values);
+    $values[] = $userId;
+    $sql = "UPDATE users SET " . implode(", ", $setParts) . " WHERE users.id = ?";
 
-        return [
-            "success" => true,
-            "message" => "Mise à jour effectué sur votre compte.",
-        ];
-
-    } catch (PDOException $e) {
-        return [
-            "success" => false,
-            "error" => $e->getMessage()
-        ];
-    }
+    $stmt = $this->pdo->prepare($sql);
+    return $stmt->execute($values);
 }
 
-private function updateUserByToken($token, $data) {
+public function updateUserByToken($token, $data) {
     $setParts = [];
     $values = [];
 
@@ -150,68 +93,15 @@ private function updateUserByToken($token, $data) {
         $setParts[] = "`$col` = ?";
         $values[] = $val;
     }
-    $sql = "UPDATE users SET " . implode(", ", $setParts) . " JOIN sessions ON users.id = sessions.user_id WHERE sessions.token = `$token`";
+    $values[] = $token;
 
-    try {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($values);
+    $sql = "UPDATE users SET " . implode(", ", $setParts) . " JOIN sessions ON users.id = sessions.user_id WHERE sessions.token = ?";
 
-        return [
-            "success" => true,
-            "message" => "Mise à jour effectué sur votre compte.",
-            "data" => [
-                "token" => $token
-            ]
-        ];
-
-    } catch (PDOException $e) {
-        throw $e;
-    }
+    $stmt = $this->pdo->prepare($sql);
+    return $stmt->execute($values);
 }
 
-public function updateUser($data) {
-    try {
-
-        if (isset($data['id'])) {
-            $userId = $data['id'];
-            unset($data['id']);
-            return $this->updateUserById($data, $userId);
-        }
-    
-        if (isset($data['token'])) {
-            $token = $data['token'];
-            unset($data['token']);
-            return $this->updateUserByToken($data, $token);
-        }
-
-        return [
-            "success" => false,
-            "message" => "Aucun paramètre de modification renseigné."
-        ];
-
-    } catch(PDOException $e) {
-        return [
-            "success" => false,
-            "message" => "Problème de mise à jour de compte.",
-            "error" => $e->getMessage()
-        ];
-    }
-}
-
-public function updateScreenById($data) {
-    $screenId = null;
-
-    if (isset($data['id'])) {
-        $screenId = $data['id'];
-        unset($data['id']);
-
-    } else {
-        return [
-            "success" => false,
-            "message" => "Sélectionnez un écran."
-        ];
-    }
-    
+public function updateScreenById($screenId, $data) {
     $setParts = [];
     $values = [];
 
@@ -219,30 +109,13 @@ public function updateScreenById($data) {
         $setParts[] = "`$col` = ?";
         $values[] = $val;
     }
-    $sql = "UPDATE screens SET " . implode(", ", $setParts) . " WHEREE screens.id = `$screenId`";
+    $values[] = $screenId;
+    $sql = "UPDATE screens SET " . implode(", ", $setParts) . " WHERE screens.id = ?";
 
-    try {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($values);
-
-        return [
-            "success" => true,
-            "message" => "Mise à jour effectué sur l'écran.",
-            "data" => [
-                "id" => $screenId
-            ]
-        ];
-
-    } catch (PDOException $e) {
-        return [
-            "success" => false,
-            "error" => $e->getMessage(),
-            "data" => [
-                "id" => $screenId
-            ]
-        ];
-    }
+    $stmt = $this->pdo->prepare($sql);
+    return $stmt->execute($values);
 }
+
 
 
 // ========================================
@@ -250,44 +123,14 @@ public function updateScreenById($data) {
 // ========================================
 
 private function deleteById($table, $id) {
-    try {
-        $sql = "DELETE FROM `$table` WHERE id = :id";
+    $sql = "DELETE FROM `$table` WHERE id = :id";
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(["id" => $id]);
-
-
-    } catch (PDOException $e) {
-        throw $e;
-    }
+    $stmt = $this->pdo->prepare($sql);
+    return $stmt->execute(["id" => $id]);
 }
 
-public function deletePermissionById($data) {
-    try {
-        if (isset($data['id'])) {
-            $id = $data['id'];
-            $this->deleteById("permissions", $id);
-
-            return [
-                "success" => false,
-                "message" => "Permission supprimé.",
-                "data" => [
-                    "id" => $id 
-                ]
-            ];
-        }
-
-        return [
-            "success" => false,
-            "message" => "Sélectionnez une permission."
-        ];
-
-    } catch(PDOException $e) {
-        return [
-            "success" => false,
-            "message" => "Problème lors d'une suppression d'une permission."
-        ];
-    }
+public function deletePermissionById($id) {
+    return $this->deleteById("permissions", $id);
 }
 
 
@@ -295,77 +138,32 @@ public function deletePermissionById($data) {
 // GETS
 // ========================================
 
-private function getTable($table) {
-    try {
-        $sql = "SELECT * FROM `$table`;";
-
-        $stmt = $this->pdo->query($sql);
-
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    } catch (PDOException $e) {
-        throw $e;
-    }
-}
-
 public function getUsers() {
-    try {
-        return [
-            "success" => true,
-            "data" => $this->getTable("users")
-        ];
+    $sql = "SELECT users.id, users.name, users.email, roles.role, created_at, updated_at FROM users JOIN roles ON users.role_id = roles.id;";
 
-    } catch (PDOException $e) {
-        return [
-            "success" => false,
-            "error" => $e->getMessage()
-        ];
-    }
+    $stmt = $this->pdo->query($sql);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 public function getScreens() {
-    try {
-        return [
-            "success" => true,
-            "data" => $this->getTable("screens")
-        ];
+    $sql = "SELECT screens.*, users.name, users.email FROM screens JOIN users ON users.id = screens.user_id;";
 
-    } catch (PDOException $e) {
-        return [
-            "success" => false,
-            "error" => $e->getMessage()
-        ];
-    }
+    $stmt = $this->pdo->query($sql);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 public function getPermissions() {
-    try {
-        return [
-            "success" => true,
-            "data" => $this->getTable("permissions")
-        ];
+    $sql = "SELECT permissions.*, users.name, users.email, screens.label FROM permissions JOIN users ON users.id = permissions.user_id JOIN screens ON screens.id = permissions.screen_id;";
 
-    } catch (PDOException $e) {
-        return [
-            "success" => false,
-            "error" => $e->getMessage()
-        ];
-    }
+    $stmt = $this->pdo->query($sql);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 public function getSessions() {
-    try {
-        return [
-            "success" => true,
-            "data" => $this->getTable("sessions")
-        ];
+    $sql = "SELECT sessions.*, users.name, users.email FROM sessions JOIN users ON users.id = sessions.user_id;";
 
-    } catch (PDOException $e) {
-        return [
-            "success" => false,
-            "error" => $e->getMessage()
-        ];
-    }
+    $stmt = $this->pdo->query($sql);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 
@@ -374,74 +172,29 @@ public function getSessions() {
 // ========================================
 
 public function getUserByEmail($email) {
-    try {
-        $sql = "SELECT * FROM users WHERE users.email = :email";
+    $sql = "SELECT id, email, password FROM users WHERE users.email = :email";
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(["email" => $email]);
-
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if(!$result) {
-            return [
-                "success" =>  false,
-            ];
-        }
-
-        return [
-            "success" => true,
-            "data" => $result
-        ];
-        
-    } catch (PDOException $e) {
-        return [
-            "success" => false,
-            "error" => $e->getMessage()
-        ];
-    }
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute(["email" => $email]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
 public function getUserBySessionToken($token) {
-    try {
-        $sql = "SELECT * FROM users JOIN sessions ON users.id = sessions.id WHERE sessions.expires_at > NOW() and sessions.token = :token";
+    $sql = "SELECT u.id, u.name, u.email, r.role, u.password_changed_at FROM users u JOIN sessions s ON u.id = s.user_id JOIN roles r ON u.role_id = r.id WHERE s.expires_at > NOW() and s.token = :token";
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(["token" => $token]);
-
-        return [
-            "success" => true,
-            "data" => $stmt->fetch(PDO::FETCH_ASSOC)
-        ];
-        
-    } catch (PDOException $e) {
-        return [
-            "success" => false,
-            "error" => $e->getMessage()
-        ];
-    }
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute(["token" => $token]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
 public function getScreensBySessionToken($token) {
-    try {
-        $sql = "SELECT * FROM screens 
-            JOIN permissions ON screens.id = permissions.screen_id 
-            JOIN users ON permissions.user_id = users.id 
-            JOIN sessions ON users.id = sessions.user_id WHERE sessions.expires_at > NOW() and sessions.token = :token";
+    $sql = "SELECT DISTINCT e.id, e.label FROM screens e
+        JOIN permissions p ON e.id = p.screen_id 
+        JOIN users u ON p.user_id = u.id JOIN sessions s ON u.id = s.user_id WHERE s.expires_at > NOW() and s.token = :token";
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(["token" => $token]);
-
-        return [
-            "success" => true,
-            "data" => $stmt->fetch(PDO::FETCH_ASSOC)
-        ];
-        
-    } catch (PDOException $e) {
-        return [
-            "success" => false,
-            "error" => $e->getMessage()
-        ];
-    }
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute(["token" => $token]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 }

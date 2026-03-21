@@ -9,17 +9,26 @@ public function __construct($database) {
 }
 
 public function get($token) {
-    $result = $this->db->getUserBySessionToken($token);
+    $result = null;
+    try {
+        $result = $this->db->getUserBySessionToken($token);
+        if(!$result) {
+            return [
+                "success" => false,
+                "message" => "Session invalide."
+            ];
+        }
 
-    if(!$result) {
+    } catch(PDOException $e) {
         return [
-            "success" => false,
-            "message" => "Session invalide."
+            "success"=> false,
+            "message"=> "Problème serveur.",
+            "error" => $e->getMessage()
         ];
     }
 
-    $change = $result["password_changed_at"];
-    $name = $result["name"];
+    $change = $result["password_changed_at"] ?? null;
+    $name = $result["name"] ?? null;
 
     if(empty($change)) {
         if(empty($name)) {
@@ -34,10 +43,16 @@ public function get($token) {
             return $this->credentials("name");
 
         } else {
-            return $result;
-
+            return [
+                "success" =>true,
+                "data" => $result
+            ];
         }
     }
+
+    
+
+    
 }
 
 public function credentials($type) {
@@ -46,47 +61,37 @@ public function credentials($type) {
         case 'password': 
         case 'name':
             return [
-                'data' => [
-                    'url' => '/login/credentials/?edit=' . rawurlencode($type),
-                ],
+                'url' => '../credentials/?edit=' . rawurlencode($type),
             ];
-            break;
-        
-        default:
-            return [
-            'data' => [
-                'url' => '/login/credentials/?edit=' . rawurlencode($type),
-            ],
-        ];
     }
 }
 
 public function edit($type) {
-    $htmlTop = `
+    $htmlTop = '
         <div class="fx-col ai-center">
             <h3>Change your profil.</h3>
-        </div>
-    `;
+        </div>';
     
-    $htmlName = `
-        <div class="fx-col gap-10">
-            <div class="fx-row">Name :</div>
-            <input type="text" id="name" required />
-        </div>
-    `;
+    $htmlName = '
+        <div class="fx-row jc-center">
+            <div class="fx-col gap-10">
+                <div class="fx-row">Name :</div>
+                <input type="text" id="input-name" name="name" />
+            </div>
+        </div>';
     
-    $htmlPassword = `
-        <div class="fx-col gap-10">
-            <div class="fx-row">Password :</div>
-            <input type="password" id="password" required />
-        </div>
-    `;
+    $htmlPassword = '
+        <div class="fx-row jc-center">
+            <div class="fx-col gap-10">
+                <div class="fx-row">Password :</div>
+                <input type="password" id="input-password" name="password" />
+            </div>
+        </div>';
     
-    $htmlBottom = `
+    $htmlBottom = '
         <div class="fx-col ai-center">
             <button id="save" class="action">Save</button>
-        </div>
-    `;
+        </div>';
     
     switch($type) {
         case "onboarding":
@@ -106,46 +111,24 @@ public function edit($type) {
                 "html" => $htmlTop . $htmlPassword . $htmlBottom
             ];
             break;
+        
     }
 }
 
 public function save($token, $data) {
-    $result = $this->db->updateUserByToken($token, $data);
+    try {
+        return [
+            "success" => $this->db->updateUserByToken($token, $data),
+            "message" => "Profil enregistré."
+        ]; 
 
-    if(!$result) {
+    } catch (PDOException $e) {
         return [
             "success" => false,
-            "message" => "Sauvegarde échouée."
+            "message"=> "Problème serveur.",
+            "error" => $e->getMessage()
         ];
     }
-
-    return $result;
-}
-
-public function action($act, $params) {
-
-    $token = $params["token"];
-    if(empty($token)) {
-        return [
-            "success" => false,
-            "message" => "Session invalide."
-        ];
-    }
-
-    switch($act) {
-        case "get":
-            return $this->get($token);
-            break;
-
-        case "edit":
-            return $this->edit($params["type"]);
-            break;
-        
-        case "save":
-            return $this->save($params["data"], $params["token"], );
-            break;
-    }
-
 }
 
 }

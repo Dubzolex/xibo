@@ -1,3 +1,6 @@
+import { showStatus } from "../../frontend/utils.js"
+
+
 const button = () => {
     const params = new URLSearchParams(window.location.search)
     const table = params.get("table")
@@ -67,8 +70,64 @@ const showUser = async (users) => {
             </div>
             `
         }).join("")
+
+        users.map(u => {
+            const btn = document.getElementById(`reset-${u.id}`)
+            if(btn) {
+                btn.addEventListener("click", () => {
+                    resetUser(u.id)
+                })
+            }
+        })
     }
 }
+
+const resetUser = async (id) => {
+    let req = {
+        id
+    }
+
+    let res = await fetch(`../../api.php?action=CONTROL_RESET_USER`, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(req)
+    })
+
+    res = await res.json()
+    console.log(res)
+
+    showStatus(res, `status-${id}`)
+
+    api()
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /* screens */
@@ -91,6 +150,42 @@ const addScreen = async () => {
 
     api()
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 const showScreen = async (screens) => {
@@ -201,10 +296,14 @@ const api = async () => {
         "permissions": "PERMISSION",
         "sessions": "SESSION"
     }
+    
+    if(!table) {
+        return
+    }
+
+    //console.log(maps[table])
 
     let req = {}
-
-    console.log(maps[table])
         
     let res = await fetch(`../../api.php?action=CONTROL_GET_${maps[table]}`, {
         method: "POST",

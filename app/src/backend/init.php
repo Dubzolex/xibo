@@ -9,6 +9,8 @@ private $dbname = "xibo";
 private $username = "user";
 private $password = "password";
 
+//docker exec -it mariadb mariadb -u user -ppassword digital_signage
+
 /*
 docker exec -it mariadb mariadb -u root -p
 Enter password:
@@ -25,6 +27,9 @@ MariaDB [(none)]> use digital_signage*/
 // ========================================
 // INIT
 // ========================================
+
+
+//ALTER TABLE nom_de_la_table RENAME COLUMN ancien_nom TO nouveau_nom;
 
 public function __construct() {
     try {

@@ -1,4 +1,7 @@
 import { isImage, isVideo } from "../frontend/utils.js"
+import { verifySession } from "../frontend/utils.js"
+
+verifySession()
 
 
 const showScreen = async (data) => {

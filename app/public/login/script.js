@@ -1,4 +1,4 @@
-import { status } from "../frontend/utils.js"
+import { showStatus } from "../frontend/utils.js"
 
 
 const login = async () => {
@@ -18,10 +18,11 @@ const login = async () => {
     res = await res.json()
     console.log(res)
 
-    status(res)
+   showStatus(res)
 
     if(res.success) {
         localStorage.setItem("token", res.data.token)
+        await new Promise(resolve => setTimeout(resolve, 2000))
         window.location.href = "./account/"
     }
 }
