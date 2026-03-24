@@ -5,14 +5,30 @@ class Media {
 private $db;
 private $allowed = ['jpg', 'jpeg', 'png', 'mp4'];
 
-private $dir = __DIR__ . "/../../images/";
+private $dir = __DIR__ . "/../../public/images/";
 
 
 public function __construct($database) {
     $this->db = $database;
 }
 
-public function getById($screenId) {
+public function get($screenId) {
+    $path = $this->dir . $screenId . "/";
+
+    if (!is_dir($path)) {
+        return [];
+    }
+
+    return array_values(array_filter(
+        scandir($path),
+        function ($f) use ($path) {
+            return is_file($path . '/' . $f) && preg_match('/\.(jpg|jpeg|png|mp4)$/i', $f);
+        }
+    ));
+
+}
+
+public function edit($screenId) {
     try {
         $path = $this->dir . $screenId . "/";
 
@@ -26,16 +42,11 @@ public function getById($screenId) {
             ];
         }
 
-        $files = array_values(array_filter(
-            scandir($path),
-            function ($f) use ($path) {
-                return is_file($path . '/' . $f) && preg_match('/\.(jpg|jpeg|png|mp4)$/i', $f);
-            }
-        ));
+        $files = $this->get($path);
 
         $html = '
-            <div class="fx-row w-800 jc-evenly ai-center gap-20 container m-20 px-20 py-10">
-                <div class="fx-row gap-20 ai-center gap-10">
+            <div class="fx-row w-600 jc-between ai-center gap-20 container px-20 py-10 mx-20">
+                <div class="fx-row ai-center gap-10">
                     <input 
                         type="file" 
                         id="file" 
@@ -43,16 +54,14 @@ public function getById($screenId) {
                         accept=".png, .jpg, .jpeg, .mp4" 
                         multiple
                     >
-                    <button id="upload" class="action">Upload</button>
+                    <button id="upload" class="action bg-green">Upload</button>
                 </div>
-                <button id="delete" class="action">Delete</button>
+                <button id="delete" class="action bg-red">Delete</button>
             </div>';
 
         return [
             "success" => true,
-            "data" => [
-                "images" => $files
-            ],
+            "data" =>  $files,
             "html" => $html
         ];
 
@@ -184,88 +193,29 @@ public function delete($screenId, $files) {
 
 public function getAll() {
     try {
-        $results = $this->db->getScreens();
+        $screens = $this->db->getScreens();
 
-        if(!$results["success"]) {
-            return $results;
-        }
-
-        foreach ($results["data"] as $r) {
-            //echo json_encode($r);
-            $s = [
-                "id" => $r["id"] ?? null,
-                "name" => $r["name"] ?? null,
-                "online" => $r["actived"] ?? null,
-                "controlled" => $r["managed"] ?? null
+        $results = array_map(function($user) {
+            return [
+                "id"    => $user["id"] ?? null,
+                "label"  => $user["label"] ?? null,
+                "running" => $user["is_running"] ?? null,
+                "images" => $this->get($user["id"]) ?? []
             ];
-
-            $img = $this->get($r["id"]);
-            if(isset($img['data'])) {
-                $d = $img['data'];
-                if(isset($d['images'])) {
-                    $s["images"] = $d['images'];
-                } else {
-                    $s["images"] = [];
-                }
-
-            } else {
-                $s["images"] = [];
-            }
-            $screens[] = $s; 
-        }
+        }, $screens);
 
         return [
             "success" => true,
-            "data" => [
-                "screens" => $screens
-            ]
+            "data" => $results
         ];
 
     } catch(Exception $e) {
         return [
             "success" => false,
-            "message" => "Erreur lors de la supression.",
+            "message" => "Problème serveur.",
             "error" => $e->getMessage()
         ];
     }
-}
-
-public function edit($token = null) {
-    return $this->db->getScreens();
-    return $this->db->getScreensBySessionToken($token);
-}
-
-public function action($action, $params) {
-
-    switch($action) {
-        case "get":
-            return $this->get($params["screenId"]);
-            break;
-
-        case "upload":
-            return $this->upload($params["screenId"], $_FILES);
-            break;
-
-        case "delete":
-            return $this->delete($params["screenId"], $params["files"]);
-            break;
-
-        case "gets":
-            return $this->getAll();
-            break;
-
-        case "allow":
-            return $this->db->getScreens();
-            break;
-
-        default:
-            return [
-                "success" => false,
-                "message" => "Action media non précisée.",
-                "action" => $action
-            ];
-    }
-
 }
 
 }

@@ -1,5 +1,6 @@
 <?php
 
+ob_start();
 header('Content-Type: application/json');
 
 //ini_set('display_errors', 0);
@@ -16,7 +17,7 @@ $db = Database::getInstance();
 $media = new Media($db);
 $auth = new Auth($db);
 $profil = new Profil($db);
-$guard = new Guard($db);
+//$guard = new Guard($db);
 $control = new Control($db);
 
 $routes = [
@@ -30,7 +31,7 @@ $routes = [
     },
 
     "AUTH_VERIFY" => function($req) use ($auth) {
-            return $auth->verify($req["token"] ?? $_GET["token"], 1);
+            return $auth->verify($req["token"] ?? $_GET["token"] ?? null);
     },
 
     "AUTH_VERIFY_EDITOR" => function($req) use ($auth) {
@@ -48,39 +49,39 @@ $routes = [
 
     /* Module Media */
 
-    "MEDIA_ALL" => function($req) use ($media) {
+    "MEDIA_SHOW" => function($req) use ($media) {
         return $media->getAll();
     },
 
-    "MEDIA_IMAGES_ID" => function($req) use ($media) {
-        return $media->getById($req["screenId"] ?? $req["id"] ?? $_GET["id"]);
-    },
-
-    "MEDIA_EDIT" => function($req) use ($media) {
-        return $media->edit($req["token"] ?? null);
+    "MEDIA_GET" => function($req) use ($media) {
+        return $media->edit($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null);
     },
 
     "MEDIA_UPLOAD" => function($req) use ($media) {
-        return $media->upload($req["screenId"] ?? $req["id"] ?? $_GET["id"], $req["file[]"]);
+        return $media->upload($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null, $req["file[]"]);
     },
 
     "MEDIA_DELETE" => function($req) use ($media) {
-        return $media->delete($req["screenId"] ?? $req["id"] ?? $_GET["id"], $req["file[]"]);
+        return $media->delete($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null, $req["file[]"]);
     },
 
 
     /* Module Profil */
 
     "PROFIL_GET" => function($req) use ($profil) {
-        return $profil->get($req["token"] ?? $_GET["token"]);
+        return $profil->get($req["token"] ?? $_GET["token"] ?? null);
     },
 
     "PROFIL_EDIT" => function($req) use ($profil) {
-        return $profil->edit($req["type"] ?? $_GET["type"]);
+        return $profil->edit($req["type"] ?? $_GET["type"] ?? null);
     },
 
     "PROFIL_SAVE" => function($req) use ($profil) {
-        return $profil->save($req["token"] ?? $_GET["token"], $req["data"] ?? []);
+        return $profil->save($req["token"] ?? $_GET["token"] ?? null, $req["data"]);
+    },
+
+    "PROFIL_AUTHORIZE" => function($req) use ($profil) {
+        return $profil->authorize($req["token"] ?? $_GET["token"] ?? null);
     },
 
 
@@ -170,4 +171,5 @@ function api($routes) {
 }
 
 $result = api($routes);
+ob_end_clean();
 echo json_encode($result);

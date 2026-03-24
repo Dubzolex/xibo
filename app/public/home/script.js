@@ -4,30 +4,29 @@ import { verifySession } from "../frontend/utils.js"
 verifySession()
 
 
-const showScreen = async (data) => {
-    const div = document.getElementById("list-screens")
+const show = async (media) => {
+    const div = document.getElementById("content")
     
-    div.innerHTML = data.map((s, i) => {
+    div.innerHTML = media.map((e, i) => {
         return `
-        <div class="fx-col gap-100">
+        <div class="fx-col gap-100 jc-between h-400">
             <div class="fx-col gap-60">
                 <div class="fx-col ai-center">
                     <div class="fx-row jc-between ai-center container w-1000 ai-center p-20">
                         <div class="fx-row gap-20 ai-center">
-                            <div>#${s.id}</div>
-                            <h3>${s.name}</h3>
+                            <h3>${e.label}</h3>
                         </div>
                         <div class="fx-row gap-10">
                             <div>online :</div>
-                            <div class="${s.actived == 1 ? "green" : "red"}">
-                                <strong>${s.actived == 1 ? "ON" : "OFF"}</strong>
+                            <div class="${e.running == 1 ? "green" : "red"}">
+                                <strong>${e.running == 1 ? "ON" : "OFF"}</strong>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div id="${s.id}" class="fx-row jc-evenly gap-80 wrap">${
-                    s.images.map(m => {
-                        const url = `/images/${s.id}/${m}`;
+                <div id="${e.id}" class="fx-row jc-evenly gap-80 wrap">${
+                    e.images.map(m => {
+                        const url = `../images/${e.id}/${m}`;
 
                         if (isImage(m)) {
                             return `
@@ -61,21 +60,19 @@ const showScreen = async (data) => {
     }).join("")
 }
 
-const apiFetch = async () => {
-    let req = {
-        module: "media",
-        action: "gets",
-        data: {}
-    }
-
-    let res = await fetch(`../api.php`, {
+const api = async () => {
+    let res = await fetch(`../api.php?action=MEDIA_SHOW`, {
         method: "POST",
-        body: JSON.stringify(req)
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
     })
+
     res = await res.json()
 
     console.log(res)
 
-    await showScreen(res?.data.screens)
+    await show(res.data)
 }
-apiFetch()
+api()

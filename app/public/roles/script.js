@@ -1,9 +1,12 @@
-import { isImage, isVideo } from "../../frontend/utils.js"
+import { isImage, isVideo } from "../frontend/utils.js"
+import { verifySession } from "../frontend/utils.js"
+
+verifySession()
 
 
 let screenId = null
 
-const showScreens = async (screens) => {
+const showScreen = async (screens) => {
     const div = document.getElementById("list-screen")
 
     if(div.length == 0) {
@@ -13,7 +16,7 @@ const showScreens = async (screens) => {
 
     div.innerHTML = screens.map(s => {
         return `
-        <button id="${s.id}" class="link ${s.id == screenId ? "active" : ""}" >${s.name}</button>`
+        <button id="${s.id}" class="link ${s.id == screenId ? "active" : ""}" >${s.label}</button>`
     }).join("")
 
     screens.map(s => {
@@ -26,6 +29,10 @@ const showScreens = async (screens) => {
             } 
         })
     })
+
+    if(screenId && !screens.map(e => e.id).includes(Number(screenId))) {
+        window.location.href = "./"
+    }
 }
 
 
@@ -33,13 +40,16 @@ const showScreens = async (screens) => {
 const showImages = async (images) => {
     const div = document.getElementById("list-images")
 
-    if(images.length == 0) {
-        div.innerHTML = `<em>No images found...</em>`
+    if(!images || images.length == 0) {
+        div.innerHTML = `
+        <div class="fx-center">
+            <em>No images found...</em>
+        </div>`
         return
     }
 
     div.innerHTML = images.map(m => {
-        const url = `/images/${screenId}/${m}`
+        const url = `../images/${screenId}/${m}`
             
             if (isImage(m)) {
                 return `
@@ -69,10 +79,6 @@ const showImages = async (images) => {
 }
 
 
-// ----------------------------
-// UPLOAD D'IMAGES
-// ----------------------------
-
 const uploadImage = async () => {
     const input = document.getElementById("file")
 
@@ -87,33 +93,22 @@ const uploadImage = async () => {
         formData.append("file[]", file);
     }
 
-    try {
-        //Construction url
-        const params = new URLSearchParams()
-        params.append("action", "upload")
-        params.append("id", screenId)
+    //Construction url
+    const params = new URLSearchParams()
+    params.append("action", "upload")
+    params.append("id", screenId)
 
-        const response = await fetch(`/backend/api/images.php?${params.toString()}`, {
-            method: "POST",
-            body: formData
-        });
+    const response = await fetch(`/backend/api/images.php?${params.toString()}`, {
+        method: "POST",
+        body: formData
+    });
 
-        const result = await response.text();
+    const result = await response.text();
 
-        await read()
-
-    } catch (e) { 
-        alert("Un problème est survenu !")
-        console.error(e)
-    }
+    await api()
 }
 
 
-
-
-// ----------------------------
-// DELETE D'IMAGES
-// ----------------------------
 
 const deleteImage = async () => {
     let mediaSelected = []
@@ -213,16 +208,41 @@ const buttonAction = async () => {
 
 
        
-const apiFetch = async () => {
-    // param url
-    let params = new URLSearchParams(window.location.search)
-    screenId = params.get("s")
-
-
+const api = async () => {
     // screens
-    let req = {}
+    let req = {
+        token: localStorage.getItem("token")
+    }
         
-    let res = await fetch(`../../api.php?action=MEDIA_EDIT`, {
+    let res = await fetch(`../api.php?action=PROFIL_AUTHORIZE`, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(req)
+    })
+
+    res = await res.json()
+    console.log(res)
+
+    const param = new URLSearchParams(window.location.search)
+    screenId = param.get("s")
+
+    await showScreen(res.data)
+
+    if(!screenId) {
+        console.log(screenId)
+        return
+    }
+
+    console.log(screenId)
+
+    // images
+    req = {
+        screenId: screenId
+    }
+
+    res = await fetch(`../api.php?action=MEDIA_GET`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -233,42 +253,11 @@ const apiFetch = async () => {
     res = await res.json()
 
     console.log(res)
-
-    const div = document.getElementById("main")
-
-
-    console.log(res)
-
-    await showScreens(res.data)
-
-    if(!screenId) {
-        console.log(screenId)
-        return
-    }
-
-    console.log(screenId)
-    // images
-    req = new FormData()
-    req.append("module", "media")
-    req.append("action", "get")
-    req.append("data", JSON.stringify({
-        "screenId": 78
-    }))
-    req.append("test", 78)
-
-    
-    res = await fetch(`../../api.php`, {
-        method: "POST",
-        body: req
-    })
-    res = await res.json()
-
-    console.log(res)
     
     if(res.html) {
-        document.getElementById("content").innerHTML = response.html ?? null
+        document.getElementById("content").innerHTML = res.html ?? null
         buttonAction() 
-        showImages(response.data.images)
+        showImages(res.data)
     }
 }
-apiFetch()
+api()

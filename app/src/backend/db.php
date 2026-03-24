@@ -70,32 +70,40 @@ public function addPermission($data) {
 // ========================================
 
 public function updateUserById($userId, $data) {
+    $allowed = ['name', 'email', 'password', 'password_changed_at'];
+    $filteredData = array_intersect_key($data, array_flip($allowed));
+
+    if (empty($filteredData)) return false;
+
     $setParts = [];
     $values = [];
-
-    foreach ($data as $col => $val) {
+    foreach ($filteredData as $col => $val) {
         $setParts[] = "`$col` = ?";
         $values[] = $val;
     }
-
     $values[] = $userId;
-    $sql = "UPDATE users SET " . implode(", ", $setParts) . " WHERE users.id = ?";
+
+    $sql = "UPDATE users SET" . implode(", ", $setParts) . " WHERE users.id = ?";
 
     $stmt = $this->pdo->prepare($sql);
     return $stmt->execute($values);
 }
 
 public function updateUserByToken($token, $data) {
+    $allowed = ['name', 'email', 'password', 'password_changed_at'];
+    $filteredData = array_intersect_key($data, array_flip($allowed));
+
+    if (empty($filteredData)) return "salut cest moi";
+
     $setParts = [];
     $values = [];
-
-    foreach ($data as $col => $val) {
-        $setParts[] = "`$col` = ?";
+    foreach ($filteredData as $col => $val) {
+        $setParts[] = "u.`$col` = ?";
         $values[] = $val;
     }
     $values[] = $token;
 
-    $sql = "UPDATE users SET " . implode(", ", $setParts) . " JOIN sessions ON users.id = sessions.user_id WHERE sessions.token = ?";
+    $sql = "UPDATE users u JOIN sessions s ON u.id = s.user_id SET " . implode(", ", $setParts) . " WHERE s.token = ?";
 
     $stmt = $this->pdo->prepare($sql);
     return $stmt->execute($values);
@@ -139,21 +147,21 @@ public function deletePermissionById($id) {
 // ========================================
 
 public function getUsers() {
-    $sql = "SELECT users.id, users.name, users.email, roles.role, created_at, updated_at FROM users JOIN roles ON users.role_id = roles.id;";
+    $sql = "SELECT users.id, users.name, users.email, roles.role, created_at, updated_at, password_changed_at FROM users JOIN roles ON users.role_id = roles.id;";
 
     $stmt = $this->pdo->query($sql);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 public function getScreens() {
-    $sql = "SELECT screens.*, users.name, users.email FROM screens JOIN users ON users.id = screens.user_id;";
+    $sql = "SELECT screens.*, users.name, users.email FROM screens LEFT JOIN users ON users.id = screens.user_id;";
 
     $stmt = $this->pdo->query($sql);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 public function getPermissions() {
-    $sql = "SELECT permissions.*, users.name, users.email, screens.label FROM permissions JOIN users ON users.id = permissions.user_id JOIN screens ON screens.id = permissions.screen_id;";
+    $sql = "SELECT permissions.*, users.name, users.email, screens.label FROM permissions LEFT JOIN users ON users.id = permissions.user_id LEFT JOIN screens ON screens.id = permissions.screen_id;";
 
     $stmt = $this->pdo->query($sql);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -180,7 +188,7 @@ public function getUserByEmail($email) {
 }
 
 public function getUserBySessionToken($token) {
-    $sql = "SELECT u.id, u.name, u.email, r.role, u.password_changed_at FROM users u JOIN sessions s ON u.id = s.user_id JOIN roles r ON u.role_id = r.id WHERE s.expires_at > NOW() and s.token = :token";
+    $sql = "SELECT u.id, u.name, u.email, r.role, GROUP_CONCAT(e.label) AS label, u.updated_at FROM users u JOIN sessions s ON u.id = s.user_id JOIN roles r ON u.role_id = r.id LEFT JOIN permissions p ON p.user_id = u.id LEFT JOIN screens e ON p.screen_id = e.id WHERE s.expires_at > NOW() AND s.token = :token GROUP BY u.id, s.id;";
 
     $stmt = $this->pdo->prepare($sql);
     $stmt->execute(["token" => $token]);
@@ -196,6 +204,18 @@ public function getScreensBySessionToken($token) {
     $stmt->execute(["token" => $token]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
+
+public function getSessionByToken($token) {
+    $sql = "SELECT u.id, u.role_id, u.name, u.password_changed_at  FROM users u JOIN sessions s ON u.id = s.user_id WHERE s.expires_at > NOW() and s.token = :token";
+
+    $stmt = $this->pdo->prepare($sql);
+    $stmt->execute(["token" => $token]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
+
+
+
 
 }
 

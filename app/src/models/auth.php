@@ -80,55 +80,56 @@ public function disconnect($token = null) {
 
 public function verify($token, $role = 1) {
     try {
-        $user = $this->db->getUserByToken($token);
+        $user = $this->db->getSessionByToken($token);
 
-        if (!$user) {
+        if (!isset($user["id"])) {
             return [
                 "success" => false,
-                "message" => "Aucun utilisateur trouvé.",
-                "alert" => "Token invalide.",
-                "url" => "/login/"
+                "message" => "Token invalide.",
+                "url" => "/login/",
             ];
         }
+
+        $role = $user["role_id"] ?? null;
+
+        return [
+            "success"=> true,
+            "message"=> "Utilisateur connecté.",
+            "html" => $this->show($role),
+            "data" => [
+                "role" => $role,
+                "user" => $user
+            ]
+        ];
 
     } catch(Exception $e) {
         return [
             "success" => false,
             "message" => "Problème serveur.",
             "error" => $e->getMessage(),
-            "alert" => "Token invalide.",
-            "url" => "/login/"
+            "url" => "/login/",
+            "data" => [
+                "token" => $token
+            ]
         ];
     }
 }
 
 
-/*
-try {
-        if ((int)$user["role_id"] >= (int)$role) { 
-            return [
-                "success" => true,
-                "message" => "Utilisateur autorisé.",
-                "data" => [
-                    "role" => $user["role_id"]
-                ]
-            ];
 
-        } else {
-            return [
-                "success" => false,
-                "message" => "Accès refusé.",
-            ]; 
-        }
-           
-    } catch(Exception $e) {
-        return [
-            "success" => false,
-            "message" => "Session expirée.",
-            "error" => $e->getMessage()
-        ];
+public function show($role) {
+    $home = '<a href="/home/"><h4>Home</h4></a>';
+    $edit = '<a href="/roles/"><h4>Edit</h4></a>';
+    $profil = '<a href="/login/account/"><h4>Profil</h4></a>';
+    $admin = '<a href="/roles/manage/"><h4>Manage</h4></a>';
+
+    if($role > 1) {
+        return $home . $edit . $admin . $profil;
     }
-*/
+
+    return $home . $edit . $profil;
+}
+
 }
 
 ?>

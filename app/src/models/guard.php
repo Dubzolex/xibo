@@ -13,7 +13,7 @@ public function __construct($database) {
     //$this->media = new Media();
     //$this->tool = new Tool();
 }
-
+/*
 private function authorizeScreensAndImages($token) {
     $v = $this->auth->verify($token, 1);
     if(!$v["success"]) {
@@ -133,50 +133,8 @@ private function authorizeImagesByScreenId($token, $screenId) {
     }
 }
 
-private function transformScreens($data) {
-    $results = [];
-
-    foreach ($data as $screen) {
-        $s = [
-            "id"         => $screen["id"],
-            "name"       => $screen["name"],
-            "online"     => $screen["is_online"],
-            "controlled" => $screen["is_controlled"]
-        ];
-
-        if ($s["controlled"] == 1) {
-            // Équivalent du .push() en JS
-            $results[] = $s; 
-        }
-    }
-
-    return $results;
-}
-
-public function action($act, $params) {
-
-    switch($act) {
-        case "home":
-            return $this->authorizeScreensAndImages($param["token"]);
-            break;
-        
-        case "screen":
-            return $this->authorizeScreens($params["token"]);
-            break;
-        
-        case "image":
-            return $this->authorizeScreens($params["token"], $params["screenId"]);
-            break;
-
-        default:
-            return [
-                "success" => false,
-                "html"    => "<div class='error'>Une erreur est survenue ou page inconnue</div>"
-            ];
-            break;
-    }
-}
-
+public function authorizeScreens($token) {
+*/
 }
 
 ?>
