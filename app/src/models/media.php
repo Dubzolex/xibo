@@ -3,13 +3,12 @@
 class Media {
 
 private $db;
-private $allowed = ['jpg', 'jpeg', 'png', 'mp4'];
 
 private $dir = __DIR__ . "/../../public/images/";
 
 
-public function __construct($database) {
-    $this->db = $database;
+public function __construct($db) {
+    $this->db = $db;
 }
 
 public function get($screenId) {
@@ -26,52 +25,6 @@ public function get($screenId) {
         }
     ));
 
-}
-
-public function edit($screenId) {
-    try {
-        $path = $this->dir . $screenId . "/";
-
-        if (!is_dir($path)) {
-            return [
-                "success" => false,
-                "message" => "Dossier introuvable",
-                "data" => [
-                    "folder" => $path
-                ]
-            ];
-        }
-
-        $files = $this->get($path);
-
-        $html = '
-            <div class="fx-row w-600 jc-between ai-center gap-20 container px-20 py-10 mx-20">
-                <div class="fx-row ai-center gap-10">
-                    <input 
-                        type="file" 
-                        id="file" 
-                        name="file[]" 
-                        accept=".png, .jpg, .jpeg, .mp4" 
-                        multiple
-                    >
-                    <button id="upload" class="action bg-green">Upload</button>
-                </div>
-                <button id="delete" class="action bg-red">Delete</button>
-            </div>';
-
-        return [
-            "success" => true,
-            "data" =>  $files,
-            "html" => $html
-        ];
-
-    } catch(Exception $e) {
-        return [
-            "success" => false,
-            "message" => "Erreur lors de la récupération des fichiers.",
-            "error" => $e->getMessage()
-        ];
-    }
 }
 
 public function upload($screenId, $files) {
@@ -186,33 +139,6 @@ public function delete($screenId, $files) {
         return [
             "success" => false,
             "message" => "Erreur lors de la supression.",
-            "error" => $e->getMessage()
-        ];
-    }
-}
-
-public function getAll() {
-    try {
-        $screens = $this->db->getScreens();
-
-        $results = array_map(function($user) {
-            return [
-                "id"    => $user["id"] ?? null,
-                "label"  => $user["label"] ?? null,
-                "running" => $user["is_running"] ?? null,
-                "images" => $this->get($user["id"]) ?? []
-            ];
-        }, $screens);
-
-        return [
-            "success" => true,
-            "data" => $results
-        ];
-
-    } catch(Exception $e) {
-        return [
-            "success" => false,
-            "message" => "Problème serveur.",
             "error" => $e->getMessage()
         ];
     }

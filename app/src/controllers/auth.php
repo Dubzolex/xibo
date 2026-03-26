@@ -2,10 +2,12 @@
 
 class Auth {
 
-private $db;
+private $userModel;
+private $sessionModel;
 
-public function __construct($database) {
-    $this->db = $database;
+public function __construct($db) {
+    $this->userModel = new User($db);
+    $this->session = new Session($db);
 }
 
 public function connect($email, $password) {  
@@ -17,7 +19,7 @@ public function connect($email, $password) {
     }
 
     try {
-        $user = $this->db->getUserByEmail($email);
+        $user = $this->userModel->getByEmail($email);
         if(!$user) {
             return [
                 "success" => false,
@@ -27,7 +29,6 @@ public function connect($email, $password) {
         
         if (isset($user["password"]) && password_verify((string)$password, $user['password'])) {
             $token = bin2hex(random_bytes(32));
-            
             $date = new DateTime();
             $expiresAt = (clone $date)->modify("+7 days")->format("Y-m-d H:i:s");
             
@@ -35,10 +36,10 @@ public function connect($email, $password) {
                 $session = [
                     "user_id" => $user["id"] ?? throw new Exception("No user id."),
                     "token" => $token ?? throw new Exception("No token generate."),
-                    "expires_at" => $expiresAt
+                    "expiresAt" => $expiresAt
                 ];
             
-                $this->db->addSession($session);
+                $this->sessionModel->add($session);
 
             } catch (PDOException $e) {
                 return [
@@ -53,7 +54,6 @@ public function connect($email, $password) {
                 "message" => "Connexion réussie.",
                 "data"=> [
                     "token" => $token
-                    //"hash" => $user['password'] ?? null
                 ]
             ];
         }
@@ -61,8 +61,6 @@ public function connect($email, $password) {
         return [
             "success" => false,
             "message" => "Mot de passe incorrect.",
-            //"password" => $password,
-            //"user" => $user
         ];
 
     } catch(PDOException $e) {
@@ -80,7 +78,7 @@ public function disconnect($token = null) {
 
 public function verify($token, $role = 1) {
     try {
-        $user = $this->db->getSessionByToken($token);
+        $user = $this->userModel->verify($token);
 
         if (!isset($user["id"])) {
             return [
@@ -115,16 +113,14 @@ public function verify($token, $role = 1) {
     }
 }
 
-
-
-public function show($role) {
+private function show($role) {
     $home = '<a href="/home/"><h4>Home</h4></a>';
     $edit = '<a href="/roles/"><h4>Edit</h4></a>';
     $profil = '<a href="/login/account/"><h4>Profil</h4></a>';
-    $admin = '<a href="/roles/manage/"><h4>Manage</h4></a>';
+    $manage = '<a href="/roles/manage/"><h4>Manage</h4></a>';
 
     if($role > 1) {
-        return $home . $edit . $admin . $profil;
+        return $home . $edit . $manage . $profil;
     }
 
     return $home . $edit . $profil;

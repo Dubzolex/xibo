@@ -1,5 +1,6 @@
-import { isImage, isVideo } from "../frontend/utils.js"
-import { verifySession } from "../frontend/utils.js"
+import { api } from "/js/client.js"
+import { verifySession } from "../js/client.js"
+import { isImage, isVideo } from "../js/utils/media.js"
 
 verifySession()
 
@@ -34,7 +35,6 @@ const showScreen = async (screens) => {
         window.location.href = "./"
     }
 }
-
 
 
 const showImages = async (images) => {
@@ -88,32 +88,31 @@ const uploadImage = async () => {
     }
 
     // Ajouter chaque fichier
-    const formData = new FormData();
+    let images = []
     for (let file of input.files) {
-        formData.append("file[]", file);
+        images.append(file)
     }
-
-    //Construction url
-    const params = new URLSearchParams()
-    params.append("action", "upload")
-    params.append("id", screenId)
-
-    const response = await fetch(`/backend/api/images.php?${params.toString()}`, {
-        method: "POST",
-        body: formData
-    });
-
-    const result = await response.text();
-
-    await api()
+    
+    let res = await api("EDITOR_UPLOAD", {
+        screenId: screenId,
+        images
+    })
+    
 }
 
 
 
 const deleteImage = async () => {
+    let res = await api("EDITOR_GET", {
+        token: localStorage.getItem("token"),
+        screenId: screenId
+    })
+
+    if(!res.success) return
+
     let mediaSelected = []
 
-    for (let item of config.images) {
+    for (let item of res.data) {
         const box = document.getElementById(item)
 
         if (box && box.checked) {
@@ -132,21 +131,10 @@ const deleteImage = async () => {
     }
 
     try {
-        // Construction url
-        const params = new URLSearchParams()
-        params.append("action", "delete")
-        params.append("id", screenId)
-        
-        mediaSelected.forEach(file => {
-            params.append('file[]', file)
+        let res = await api("EDITOR_DELETE", {
+            screenId: screenId,
+            images: mediaSelected
         })
-        
-        const response  = await fetch(`/backend/api/images.php?${params.toString()}`, {
-            cache: 'no-store'
-        })
-        const result = await response.text()
-
-        await read()
         
     } catch(e){
         alert("Un problème est survenu !")
@@ -167,97 +155,30 @@ const buttonAction = async () => {
     })
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
        
-const api = async () => {
+const search = async () => {
     // screens
-    let req = {
+    let res = await api("EDITOR_GET", {
         token: localStorage.getItem("token")
-    }
-        
-    let res = await fetch(`../api.php?action=PROFIL_AUTHORIZE`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
     })
-
-    res = await res.json()
-    console.log(res)
 
     const param = new URLSearchParams(window.location.search)
     screenId = param.get("s")
 
     await showScreen(res.data)
 
-    if(!screenId) {
-        console.log(screenId)
-        return
-    }
-
-    console.log(screenId)
+    if(!screenId) return
 
     // images
-    req = {
+    let res2 = await api("EDITOR_SHOW", {
+        token: localStorage.getItem("token"),
         screenId: screenId
-    }
-
-    res = await fetch(`../api.php?action=MEDIA_GET`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
     })
-
-    res = await res.json()
-
-    console.log(res)
     
-    if(res.html) {
-        document.getElementById("content").innerHTML = res.html ?? null
+    if(res2.html) {
+        document.getElementById("content").innerHTML = res2.html ?? null
         buttonAction() 
-        showImages(res.data)
+        showImages(res2.data)
     }
 }
-api()
+search()

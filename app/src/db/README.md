@@ -2,6 +2,8 @@ Commande Terminal:
  - docker exec -it mariadb mariadb -u user -ppassword digital_signage
  - docker exec -it mariadb mariadb -u root -p
 
+ docker-compose -f local.yml up -d
+
 
 //users
 

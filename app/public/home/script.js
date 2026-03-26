@@ -1,11 +1,14 @@
-import { isImage, isVideo } from "../frontend/utils.js"
-import { verifySession } from "../frontend/utils.js"
+import { api } from "/js/client.js"
+import { verifySession } from "../js/client.js"
+import { isImage, isVideo } from "../js/utils/media.js"
+
 
 verifySession()
 
-
 const show = async (media) => {
     const div = document.getElementById("content")
+
+    if(!div) return
     
     div.innerHTML = media.map((e, i) => {
         return `
@@ -60,19 +63,8 @@ const show = async (media) => {
     }).join("")
 }
 
-const api = async () => {
-    let res = await fetch(`../api.php?action=MEDIA_SHOW`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-    })
-
-    res = await res.json()
-
-    console.log(res)
-
+const search = async () => {
+    let res = await api("VIEWER_SHOW")
     await show(res.data)
 }
-api()
+search()

@@ -1,24 +1,13 @@
-import { showStatus } from "../frontend/utils.js"
+import { showStatus, api } from "/js/client.js"
 
 
 const login = async () => {
-    let req = {
+    const req = {
         email: document.getElementById("input-email").value ?? null,
         password: document.getElementById("input-password").value ?? null
     }
 
-    let res = await fetch(`../api.php?action=AUTH_LOGIN`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
-    })
-
-    res = await res.json()
-    console.log(res)
-
-   showStatus(res)
+    const res = await api("AUTH_LOGIN", req)
 
     if(res.success) {
         localStorage.setItem("token", res.data.token)

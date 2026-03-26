@@ -1,26 +1,18 @@
 <?php
 
-class Control {
+class Manager {
 
-private $db;
+private $userModel;
+private $screenModel;
+private $sessionModel;
+private $permissionModel;
 
-public function __construct($database) {
-    $this->db = $database;
+public function __construct($db) {
+    $this->userModel = new User($db);
+    $this->screenModel = new Screen($db);
+    $this->sessionModel = new Session($db);
+    $this->permissionModel = new Permission($db);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 /* users */
@@ -40,7 +32,7 @@ public function getUsers() {
         </div>';
 
     try {
-        $users = $this->db->getUsers();
+        $users = $this->userModel->getAll();
 
         $results = array_map(function($user) {
             return [
@@ -55,7 +47,7 @@ public function getUsers() {
         
         return [
             "success" => true,
-            "html"=> $html ?? null,
+            "html"=> $html,
             "data" => $results ?? []
         ];
 
@@ -75,7 +67,7 @@ public function addUser(array $data) {
         $data["password"] = password_hash($pwd, PASSWORD_DEFAULT);
 
         return [
-            "success" => $this->db->addUser($data),
+            "success" => $this->userModel->add($data),
             "alert" => "Mot de passe généré pour " . $data["email"]  . " : " . $pwd
         ];
 
@@ -88,47 +80,16 @@ public function addUser(array $data) {
     }
 }
 
-
-public function resetUser(int $id) {
-    $pwd = bin2hex(random_bytes(6));
-    $data = [
-        "password" => password_hash($pwd, PASSWORD_DEFAULT),
-        "password_changed_at" => null,
-    ];
-
+public function updateUser($id, $data) {
     if($id == null) {
-            return [
+        return [
             "success" => false,
             "message"=> "No user id."
         ];
     }
 
-    try {    
-        return [
-            "success" => $this->db->updateUserById($id, $data),
-            "alert" => "Nouveau mot de passe : " . $pwd
-        ];
-
-    } catch (PDOException $e) {
-        return [
-            "success" => false,
-            "message" => "Problème serveur.",
-            "error" => $e->getMessage()
-        ];
-    }
-    
-}
-
-public function updateUser($id, $data) {
-    if($id == null) {
-        return [
-            "success" => false,
-            "message"=> "No screen id."
-        ];
-    }
-
     try {
-        return $this->db->updateUserById($id, $data);
+        return $this->userModel->update($id, $data);
 
     } catch (PDOException $e) {
         return [
@@ -141,21 +102,34 @@ public function updateUser($id, $data) {
 }
 
 
+public function resetUser(int $id) {
+    if($id == null) {
+            return [
+            "success" => false,
+            "message"=> "No user id."
+        ];
+    }
 
+    try {
+        $pwd = bin2hex(random_bytes(6));
+        $data = [
+            "password" => password_hash($pwd, PASSWORD_DEFAULT),
+            "passwordChangedAt" => null,
+        ];
 
+        return [
+            "success" => $this->userModel->update($id, $data),
+            "alert" => "Nouveau mot de passe : " . $pwd
+        ];
 
-
-
-
-
-
-
-
-
-
-
-
-
+    } catch (PDOException $e) {
+        return [
+            "success" => false,
+            "message" => "Problème serveur.",
+            "error" => $e->getMessage()
+        ];
+    }
+}
 
 
 /* screens */
@@ -175,13 +149,12 @@ public function getScreens() {
         </div>';
 
     try {
-        $screens = $this->db->getScreens();
+        $elements = $this->screenModel->getAll();
 
         $results = array_map(function($e) {
             return [
-                "id"    => $e["id"] ?? null,
+                "id" => $e["id"] ?? null,
                 "label"  => $e["label"] ?? null,
-                "location" => $e["location"] ?? null,
                 "description" => $e["description"] ?? null,
                 "format" => $e["format"] ?? null,
                 "running" => $e["is_running"] ?? null,
@@ -189,11 +162,11 @@ public function getScreens() {
                 "controlled" => $e["is_controlled"] ?? null,
                 "visible" => $e["is_visible"] ?? null
             ];
-        }, $screens);
+        }, $elements);
 
         return [
             "success" => true,
-            "html"=> $html ?? null,
+            "html"=> $html,
             "data" => $results
         ];
 
@@ -210,7 +183,7 @@ public function getScreens() {
 
 public function addScreen($data) {
     try {
-        return $this->db->addScreen($data);
+        return $this->screenModel->add($data);
 
     } catch (PDOException $e) {
         return [
@@ -231,7 +204,7 @@ public function updateScreen($id, $data) {
     }
 
     try {
-        return $this->db->updateScreenById($id, $data);
+        return $this->screenModel->update($id, $data);
 
     } catch (PDOException $e) {
         return [
@@ -243,10 +216,7 @@ public function updateScreen($id, $data) {
     
 }
 
-
-
-
-
+/* permissions */
 public function getPermissions() {
     $html = '
         <div class="fx-row jc-center px-20">
@@ -261,8 +231,9 @@ public function getPermissions() {
         <div class="fx-row jc-center grow">
             <div id="content-permission" class="fx-col grow w-1000"></div>
         </div>';
+
     try {
-        $permissions = $this->db->getPermissions();
+        $permissions = $this->permissionModel->getAll();
 
         $results = array_map(function($p) {
             return [
@@ -280,6 +251,7 @@ public function getPermissions() {
             "html"=> $html,
             "data" => $results
         ];
+
     } catch (PDOException $e) {
         return [
             "success"=> false,
@@ -291,13 +263,13 @@ public function getPermissions() {
 
 public function addPermission($data) {
     try {
-        $result = [
+        $req = [
             "user_id" => $data["userId"] ?? throw new Exception("No user id"),
             "screen_id" => $data["screenId"] ?? throw new Exception("No screen id"),
         ];
 
         try {
-            return $this->db->addPermission($result);
+            return $this->permissionModel->add($req);
 
         } catch (PDOException $e) {
             return [
@@ -317,8 +289,12 @@ public function addPermission($data) {
 }
 
 public function deletePermission($id) {
+    if($id == null) {
+        return ["success"=> false, "message"=> "No permission id"];
+    }
+
     try {
-        return $this->db->deletePermissionById($id);
+        return $this->permissionModel->delete($id);
 
     } catch (PDOException $e) {
         return [
@@ -336,7 +312,7 @@ public function getSessions() {
         </div>';
 
     try {
-        $sessions = $this->db->getSessions();
+        $sessions = $this->sessionModel->getAll();
 
         $results = array_map(function($s) {
             return [

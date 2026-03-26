@@ -1,21 +1,21 @@
-import { showStatus } from "../../frontend/utils.js"
-import { verifySession } from "../../frontend/utils.js"
+import { api, showStatus } from "/js/client.js"
+//import { verifySession } from "../../frontend/utils.js"
 
-verifySession()
+//verifySession()
 
 
-const show = async (u) => {
+const show = async (user) => {
     const div = document.getElementById("content")
     if(div) {
         div.innerHTML = `
-            <h3>Hello ${u.name} !</h3>
+            <h3>Hello ${user.name} !</h3>
             <div class="fx-row jc-between ai-center">
                 <div>Name :</div>
                 <a href="../credentials?edit=name"><button class="action">Edit</button></a>
             </div>
             <div class="fx-row jc-between">
                 <div>Email :</div>
-                <div>${u.email}</div>
+                <div>${user.email}</div>
             </div>
             <div class="fx-row jc-between ai-center">
                 <div>Password :</div>
@@ -23,17 +23,17 @@ const show = async (u) => {
             </div>
             <div class="fx-row jc-between">
                 <div>Role :</div>
-                <div>${u.role}</div>
+                <div>${user.role}</div>
             </div>
             <div class="fx-row jc-between">
                 <div>Last update :</div>
-                <div>${u.updatedAt}</div>
+                <div>${user.updatedAt}</div>
             </div>
             <div class="fx-col gap-10">
                 <div>Screen :</div>
                 <div class="fx-row jc-center">
                     <ul class="fx-col jc-evenly gap-10 px-40">
-                        ${u.screens.map(e => {
+                        ${user.screens.map(e => {
                             return `
                             <li>${e}</li>`
                         }).join("")}
@@ -64,26 +64,12 @@ const logout = async () =>  {
 
 
 
-const api = async () => {
-    let req = {
-        token: localStorage.getItem("token")
-    }
 
-    let res = await fetch(`../../api.php?action=PROFIL_GET`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
-    })
+let res = await api("PROFIL_GET", {
+    token: localStorage.getItem("token")
+})
 
-    res = await res.json()
-    console.log(res)
-
-    showStatus(res)
-
-    if(res.success) {
-        show(res.data)
-    }
+if(res.success) {
+    show(res.data)
 }
-api()
+

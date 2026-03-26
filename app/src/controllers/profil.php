@@ -2,15 +2,17 @@
 
 class Profil {
 
-private $db;
+private $userModel;
+private $screenModel;
 
-public function __construct($database) {
-    $this->db = $database;
+public function __construct($db) {
+    $this->userModel = new User($db);
+    $this->screenModel = new Screen($db);
 }
 
 public function get($token) {
     try {
-        $user = $this->db->getSessionByToken($token);
+        $user = $this->userModel->verify($token);
         if(empty($user)) {
             return [
                 "success" => false,
@@ -18,8 +20,8 @@ public function get($token) {
             ];
         }
 
-        $change = $user["password_changed_at"] ?? null;
-        $name = $user["name"] ?? null;
+        $change = $u["password_changed_at"] ?? null;
+        $name = $u["name"] ?? null;
 
         if (empty($change) && empty($name)) {
             return $this->credentials("onboarding");
@@ -42,7 +44,7 @@ public function get($token) {
     }
 
     try {
-        $user = $this->db->getUserBySessionToken($token);
+        $user = $this->userModel->getByToken($token);
         
         if(empty($user)) {
             return [
@@ -69,7 +71,8 @@ public function get($token) {
         return [
             "success"=> false,
             "message"=> "Problème serveur.",
-            "error" => $e->getMessage()
+            "error" => $e->getMessage(),
+            "token" => $token
         ];
     }
 }
@@ -142,12 +145,11 @@ public function edit($type) {
 public function save($token, $data) {
     try {
         if(isset($data["password"])) {
-            $data["password"] = password_hash($data["password"], PASSWORD_DEFAULT);
-            $data["password_changed_at"] = date("Y-m-d H:i:s");
+            $data["passwordChangedAt"] = date("Y-m-d H:i:s");
         }    
 
         return [
-            "success" => $this->db->updateUserByToken($token, $data),
+            "success" => $this->userModel->updateByToken($token, $data),
             "message" => "Profil enregistré.",
             "data" => $data
         ]; 
@@ -157,34 +159,6 @@ public function save($token, $data) {
             "success" => false,
             "message"=> "Problème serveur.",
             "error" => $e->getMessage()
-        ];
-    }
-}
-
-public function authorize($token) {
-    try {
-        $screens = $this->db->getScreensBySessionToken($token);
-
-        $results = array_map(function($s) {
-            return [
-                "id"    => $s["id"] ?? null,
-                "label"  => $s["label"] ?? null,
-                "running" => $s["is_running"] ?? null,
-                "updating" => $s["is_updating"] ?? null
-            ];
-        }, $screens);
-
-        return [
-            "success" => true,
-            "data" => $results
-        ];
-
-
-    } catch(PDOException $e) {
-        return [
-            "success"=> false,
-            "message"=> "Problème serveur.",
-            "error"=> $e->getMessage()
         ];
     }
 }

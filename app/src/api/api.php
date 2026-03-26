@@ -1,73 +1,37 @@
 <?php
 
 ob_start();
+
 header('Content-Type: application/json');
 
-//ini_set('display_errors', 0);
 
-require __DIR__ . "/../backend/db.php";
-require __DIR__ . "/../models/auth.php";
-require __DIR__ . "/../models/media.php";
-require __DIR__ . "/../models/profil.php";
-require __DIR__ . "/../models/guard.php";
-require __DIR__ . "/../models/control.php";
+require_once __DIR__ . "/../config.php";
 
 
 $db = Database::getInstance();
-$media = new Media($db);
+
 $auth = new Auth($db);
 $profil = new Profil($db);
-//$guard = new Guard($db);
-$control = new Control($db);
+$viewer = new Viewer($db);
+$editor = new Editor($db);
+$manager = new Manager($db);
 
 $routes = [
-    /* Module Auth */
+    /* Controller Auth */
     "AUTH_LOGIN" => function($req) use ($auth) {
         return $auth->connect($req["email"]  ?? $_GET["email"] ?? null, $req["password"]  ?? $_GET["password"]?? null);
     },
 
     "AUTH_LOGOUT" => function($req) use ($auth) {
-            return $auth->disconnect();
+        return $auth->disconnect();
     },
 
     "AUTH_VERIFY" => function($req) use ($auth) {
-            return $auth->verify($req["token"] ?? $_GET["token"] ?? null);
-    },
-
-    "AUTH_VERIFY_EDITOR" => function($req) use ($auth) {
-            return $auth->verify($req["token"] ?? $_GET["token"], 2);
-    },
-
-    "AUTH_VERIFY_MANAGER" => function($req) use ($auth) {
-            return $auth->verify($req["token"] ?? $_GET["token"], 3);
-    },
-
-    "AUTH_VERIFY_ADMIN" => function($req) use ($auth) {
-            return $auth->verify($req["token"] ?? $_GET["token"], 4);
+        return $auth->verify($req["token"] ?? $_GET["token"] ?? null);
     },
 
 
-    /* Module Media */
-
-    "MEDIA_SHOW" => function($req) use ($media) {
-        return $media->getAll();
-    },
-
-    "MEDIA_GET" => function($req) use ($media) {
-        return $media->edit($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null);
-    },
-
-    "MEDIA_UPLOAD" => function($req) use ($media) {
-        return $media->upload($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null, $req["file[]"]);
-    },
-
-    "MEDIA_DELETE" => function($req) use ($media) {
-        return $media->delete($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null, $req["file[]"]);
-    },
-
-
-    /* Module Profil */
-
+    /* Controller Profil */
     "PROFIL_GET" => function($req) use ($profil) {
         return $profil->get($req["token"] ?? $_GET["token"] ?? null);
     },
@@ -80,68 +44,82 @@ $routes = [
         return $profil->save($req["token"] ?? $_GET["token"] ?? null, $req["data"]);
     },
 
-    "PROFIL_AUTHORIZE" => function($req) use ($profil) {
-        return $profil->authorize($req["token"] ?? $_GET["token"] ?? null);
+
+    /* Controller Viewer */
+    "VIEWER_SHOW" => function($req) use ($viewer) {
+        return $viewer->get();
+    },
+
+
+    /* Controller Editor */
+    "EDITOR_GET" => function($req) use ($editor) {
+        return $editor->get($req["token"] ?? $_GET["token"] ?? null);
+    },
+
+    "EDITOR_SHOW" => function($req) use ($editor) {
+        return $editor->show($req["token"] ?? $_GET["token"] ?? null, $req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null);
+    },
+
+    "EDITOR_UPLOAD" => function($req) use ($editor) {
+        return $editor->upload($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null, $req["file[]"] ?? []);
+    },
+
+    "EDITOR_DELETE" => function($req) use ($editor) {
+        return $editor->delete($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null, $req["images"] ?? []);
     },
 
 
     /* Control Users */
 
-    "CONTROL_GET_USER" => function($req) use ($control) {
-        return $control->getUsers();
+    "MANAGE_GET_USER" => function($req) use ($manager) {
+        return $manager->getUsers();
     },
 
-    "CONTROL_ADD_USER" => function($req) use ($control) {
-        return $control->addUser($req["data"]);
+    "MANAGE_ADD_USER" => function($req) use ($manager) {
+        return $manager->addUser($req["data"]);
     },
 
-    "CONTROL_UPDATE_USER" => function($req) use ($control) {
-        return $control->updateUser($req["userId"] ?? $req["id"], $req["data"]);
+    "MANAGE_UPDATE_USER" => function($req) use ($manager) {
+        return $manager->updateUser($req["userId"] ?? $req["id"], $req["data"]);
     },
 
-    "CONTROL_RESET_USER" => function($req) use ($control) {
-        return $control->resetUser($req["userId"] ?? $req["id"] ?? $_GET["id"]);
+    "MANAGE_RESET_USER" => function($req) use ($manager) {
+        return $manager->resetUser($req["userId"] ?? $req["id"] ?? $_GET["id"]);
     },
 
     /* Control Screens */
 
-    "CONTROL_GET_SCREEN" => function($req) use ($control) {
-        return $control->getScreens();
+    "MANAGE_GET_SCREEN" => function($req) use ($manager) {
+        return $manager->getScreens();
     },
 
-    "CONTROL_ADD_SCREEN" => function($req) use ($control) {
-        return $control->addScreen($req["data"]);
+    "MANAGE_ADD_SCREEN" => function($req) use ($manager) {
+        return $manager->addScreen($req["data"]);
     },
 
-    "CONTROL_UPDATE_SCREEN" => function($req) use ($control) {
-        return $control->updateScreen($req["screenId"] ?? $req["id"], $req["data"]);
-    },
-
-    /* Control Permissions */
-
-    "CONTROL_GET_PERMISSION" => function($req) use ($control) {
-        return $control->getPermissions();
-    },
-
-    "CONTROL_ADD_PERMISSION" => function($req) use ($control) {
-        return $control->addPermission($req["data"]);
-    },
-
-    "CONTROL_DELETE_PERMISSION" => function($req) use ($control) {
-        return $control->deletePermission($req["permissionId"] ?? $req["id"]);
+    "MANAGE_UPDATE_SCREEN" => function($req) use ($manager) {
+        return $manager->updateScreen($req["screenId"] ?? $req["id"], $req["data"]);
     },
 
     /* Control Permissions */
 
-    "CONTROL_GET_SESSION" => function($req) use ($control) {
-        return $control->getSessions();
+    "MANAGE_GET_PERMISSION" => function($req) use ($manager) {
+        return $manager->getPermissions();
+    },
+
+    "MANAGE_ADD_PERMISSION" => function($req) use ($manager) {
+        return $manager->addPermission($req["data"]);
+    },
+
+    "MANAGE_DELETE_PERMISSION" => function($req) use ($manager) {
+        return $manager->deletePermission($req["permissionId"] ?? $req["id"]);
+    },
+
+    /* Control Permissions */
+
+    "MANAGE_GET_SESSION" => function($req) use ($manager) {
+        return $manager->getSessions();
     }
-
-
-
-
-
-
 ];
 
 function api($routes) {

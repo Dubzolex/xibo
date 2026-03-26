@@ -1,5 +1,6 @@
-import { showStatus } from "../../frontend/utils.js"
-import { verifySession } from "../../frontend/utils.js"
+import { api } from "/js/client.js"
+import { verifySession } from "/js/client.js"
+
 
 verifySession()
 
@@ -28,6 +29,208 @@ const button = () => {
     }
 }
 button()
+
+
+const showUser = async (users) => {
+    const div = document.getElementById("content-user")
+    if(!div) return
+
+    document.getElementById("add-user").addEventListener("click", () => {
+        addUser()
+    })
+
+    div.innerHTML = `
+        <table>
+            <thead>
+                <th style="width: 15%;">Name</th>
+                <th style="width: 25%;">Email</th>
+                <th style="width: 12%;">Role</th>
+                <th style="width: 20%;">Updated</th>
+                <th style="width: 12%;">Password</th>
+                <th style="width: 20%;">Changed</th>
+            </thead>
+            <tbody class="scroll-y">
+                ${users.sort((a, b) => a.email.localeCompare(b.email)).map(u => `
+                    <tr>
+                        <td>${u.name ?? "-"}</td>
+                        <td ondblclick="makeEdit('USER', this, ${u.id}, 'email')">${u.email ?? ""}</td>
+                        <td>${u.role}</td>
+                        <td>${u.updatedAt ?? "-"}</td>
+                        <td>
+                            <button class="action bg-red" id="reset-${u.id}">Reset</button>
+                        </td>
+                        <td>${u.changedAt ?? "-"}</td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>`
+
+    users.map(u => {
+        const btn = document.getElementById(`reset-${u.id}`)
+        if(btn) {
+            btn.addEventListener("click", () => {
+                resetUser(u)
+            })
+        }
+    })
+}
+
+
+const showScreen = async (screens) => {
+    const div = document.getElementById("content-screen")
+    if(!div) return 
+
+    document.getElementById("add-screen").addEventListener("click", () => {
+        addScreen()
+    })
+
+    div.innerHTML = `
+        <table>
+            <thead>
+                <th style="width: 20%;">Label</th>
+                <th style="width: 20%;">Description</th>
+                <th style="width: 20%;">Format</th>
+                <th style="width: 10%;">Visible</th>
+                <th style="width: 10%;">Running</th>
+                <th style="width: 10%;">Updating</th>
+                <th style="width: 10%;">Controlled</th>
+            </thead>
+            <tbody class="scroll-y">
+                ${screens.map(e => `
+                    <tr>
+                        <td ondblclick="makeEditable(this, ${e.id}, 'label')">${e.label ?? ""}</td>
+                        <td ondblclick="makeEditable(this, ${e.id}, 'description')">${e.description ?? ""}</td>
+                        <td ondblclick="makeEditable(this, ${e.id}, 'format')">${e.format ?? ""}</td>
+                        <td>
+                            <label class="switch">
+                                <input type="checkbox" ${e.visible == 1 ? 'checked' : ''} 
+                                    onchange="toggleScreen(${e.id}, 'visible', this.checked)">
+                                <span class="slider round"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <label class="switch">
+                                <input type="checkbox" ${e.running == 1 ? 'checked' : ''} 
+                                    onchange="toggleScreen(${e.id}, 'is_running', this.checked)">
+                                <span class="slider round"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <label class="switch">
+                                <input type="checkbox" ${e.updating == 1 ? 'checked' : ''} 
+                                    onchange="toggleScreen(${e.id}, 'is_updating', this.checked)">
+                                <span class="slider round"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <label class="switch">
+                                <input type="checkbox" ${e.controlled == 1 ? 'checked' : ''} 
+                                    onchange="toggleScreen(${e.id}, 'is_controlled', this.checked)">
+                                <span class="slider round"></span>
+                            </label>
+                        </td>
+                    </tr>
+                `).join("")}
+            </tbody>
+        </table>`
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -151,7 +354,7 @@ const addUser = async () => {
         }
     }
 
-    let res = await fetch(`../../api.php?action=CONTROL_ADD_USER`, {
+    let res = await fetch(`../../api.php?action=MANAGE_ADD_USER`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -168,54 +371,7 @@ const addUser = async () => {
 }
 
 
-const showUser = async (users) => {
-    const div = document.getElementById("content-user")
 
-    if(div) {
-        document.getElementById("add-user").addEventListener("click", () => {
-            addUser()
-        })
-
-        console.log(users)
-
-        div.innerHTML = `
-            <table>
-                <thead>
-                    <th style="width: 15%;">Name</th>
-                    <th style="width: 25%;">Email</th>
-                    <th style="width: 12%;">Role</th>
-                    <th style="width: 20%;">Updated</th>
-                    <th style="width: 12%;">Password</th>
-                    <th style="width: 20%;">Changed</th>
-                </thead>
-                <tbody class="scroll-y">
-                    ${users
-                        .sort((a, b) => a.email.localeCompare(b.email))
-                        .map(u => `
-                            <tr>
-                                <td>${u.name ?? "-"}</td>
-                                <td ondblclick="makeEdit(this, ${u.id}, 'email')">${u.email ?? ""}</td>
-                                <td>${u.role}</td>
-                                <td>${u.updatedAt ?? "-"}</td>
-                                <td>
-                                    <button class="action bg-red" id="reset-${u.id}">Reset</button>
-                                </td>
-                                <td>${u.changedAt ?? "-"}</td>
-                            </tr>
-                        `).join("")}
-                </tbody>
-            </table>`
-
-        users.map(u => {
-            const btn = document.getElementById(`reset-${u.id}`)
-            if(btn) {
-                btn.addEventListener("click", () => {
-                    resetUser(u)
-                })
-            }
-        })
-    }
-}
 
 const resetUser = async (u) => {
     let choix = confirm(`Réinitialiser le mot de passe de ${u.email} ?`)
@@ -225,7 +381,7 @@ const resetUser = async (u) => {
             id: u.id
         }
 
-        let res = await fetch(`../../api.php?action=CONTROL_RESET_USER`, {
+        let res = await fetch(`../../api.php?action=MANAGE_RESET_USER`, {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json'
@@ -242,7 +398,7 @@ const resetUser = async (u) => {
     }
 }
 
-window.makeEdit = (element, id, field) => {
+window.makeEdit = (table, element, id, field) => {
     const oldValue = element.innerText
     const input = document.createElement("input")
     
@@ -258,7 +414,7 @@ window.makeEdit = (element, id, field) => {
     const save = async () => {
         const newValue = input.value
         if (newValue !== oldValue) {
-            await updateUser(id, field, newValue)
+            await update(table, id, field, newValue)
         }
         element.innerText = newValue || '---'
     };
@@ -268,25 +424,13 @@ window.makeEdit = (element, id, field) => {
 }
 
 
-const updateUser = async (id, field, value) => {
-    let req = {
+const update = async (table, id, field, value) => {
+    await api("MANAGE_UPDATE_" + table, {
         userId: id,
         data: {
             [field]: value
         }
-    }
-
-    console.log(req)
-
-    let res = await fetch(`../../api.php?action=CONTROL_UPDATE_USER`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
     })
-    res = await res.json()
-    api()
 }
 
 
@@ -323,7 +467,7 @@ const addScreen = async () => {
         }
     }
 
-    let res = await fetch(`../../api.php?action=CONTROL_ADD_SCREEN`, {
+    let res = await fetch(`../../api.php?action=MANAGE_ADD_SCREEN`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -339,7 +483,7 @@ const addScreen = async () => {
 window.toggleScreen = async (id, field, isChecked) => {
     const value = isChecked ? 1 : 0;
 
-    let res = await fetch(`../../api.php?action=CONTROL_UPDATE_SCREEN`, {
+    let res = await fetch(`../../api.php?action=MANAGE_UPDATE_SCREEN`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -392,7 +536,7 @@ const updateScreen = async (id, field, value) => {
         }
     }
 
-    let res = await fetch(`../../api.php?action=CONTROL_UPDATE_SCREEN`, {
+    let res = await fetch(`../../api.php?action=MANAGE_UPDATE_SCREEN`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -413,65 +557,7 @@ const updateScreen = async (id, field, value) => {
 
 
 
-const showScreen = async (screens) => {
-    const div = document.getElementById("content-screen")
 
-    if(div) {
-        document.getElementById("add-screen").addEventListener("click", () => {
-            addScreen()
-        })
-
-        div.innerHTML = `
-            <table>
-                <thead>
-                    <th style="width: 20%;">Label</th>
-                    <th style="width: 20%;">Description</th>
-                    <th style="width: 20%;">Format</th>
-                    <th style="width: 10%;">Visible</th>
-                    <th style="width: 10%;">Running</th>
-                    <th style="width: 10%;">Updating</th>
-                    <th style="width: 10%;">Controlled</th>
-                </thead>
-                <tbody class="scroll-y">
-                    ${screens.map(e => `
-                        <tr>
-                            <td ondblclick="makeEditable(this, ${e.id}, 'label')">${e.label ?? ""}</td>
-                            <td ondblclick="makeEditable(this, ${e.id}, 'description')">${e.description ?? ""}</td>
-                            <td ondblclick="makeEditable(this, ${e.id}, 'format')">${e.format ?? ""}</td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" ${e.visible == 1 ? 'checked' : ''} 
-                                        onchange="toggleScreen(${e.id}, 'visible', this.checked)">
-                                    <span class="slider round"></span>
-                                </label>
-                            </td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" ${e.running == 1 ? 'checked' : ''} 
-                                        onchange="toggleScreen(${e.id}, 'is_running', this.checked)">
-                                    <span class="slider round"></span>
-                                </label>
-                            </td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" ${e.updating == 1 ? 'checked' : ''} 
-                                        onchange="toggleScreen(${e.id}, 'is_updating', this.checked)">
-                                    <span class="slider round"></span>
-                                </label>
-                            </td>
-                            <td>
-                                <label class="switch">
-                                    <input type="checkbox" ${e.controlled == 1 ? 'checked' : ''} 
-                                        onchange="toggleScreen(${e.id}, 'is_controlled', this.checked)">
-                                    <span class="slider round"></span>
-                                </label>
-                            </td>
-                        </tr>
-                    `).join("")}
-                </tbody>
-            </table>`
-    }
-}
 
 
 
@@ -520,7 +606,7 @@ const showPermission = async (permissions) => {
         addPermission()
     })
 
-    let res1 = await fetch(`../../api.php?action=CONTROL_GET_USER`, {
+    let res1 = await fetch(`../../api.php?action=MANAGE_GET_USER`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -529,7 +615,7 @@ const showPermission = async (permissions) => {
     })
     res1 = await res1.json()
 
-    let res2 = await fetch(`../../api.php?action=CONTROL_GET_SCREEN`, {
+    let res2 = await fetch(`../../api.php?action=MANAGE_GET_SCREEN`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -559,7 +645,7 @@ const addPermission = async (p) => {
         }
     }
 
-    let res = await fetch(`../../api.php?action=CONTROL_ADD_PERMISSION`, {
+    let res = await fetch(`../../api.php?action=MANAGE_ADD_PERMISSION`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -578,7 +664,7 @@ const deletePermission = async (p) => {
         id: p.id
     }
 
-    let res = await fetch(`../../api.php?action=CONTROL_DELETE_PERMISSION`, {
+    let res = await fetch(`../../api.php?action=MANAGE_DELETE_PERMISSION`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -644,7 +730,7 @@ const showSession = async (sessions) => {
 }
 
 
-const api = async () => {
+const search = async () => {
     const params = new URLSearchParams(window.location.search)
     const table = params.get("table")
 
@@ -663,7 +749,7 @@ const api = async () => {
 
     let req = {}
         
-    let res = await fetch(`../../api.php?action=CONTROL_GET_${maps[table]}`, {
+    let res = await fetch(`../../api.php?action=MANAGE_GET_${maps[table]}`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -685,4 +771,4 @@ const api = async () => {
     }
 
 }
-api()
+search()
