@@ -9,7 +9,7 @@ const button = () => {
     const params = new URLSearchParams(window.location.search)
     const table = params.get("table")
     
-    for(let b of ["users", "screens", "permissions", "sessions"]) {
+    for(let b of ["user", "screen", "permission", "session"]) {
         const btn = document.getElementById(b)
         if(btn) {
             if(b == table) {
@@ -53,8 +53,8 @@ const showUser = async (users) => {
                 ${users.sort((a, b) => a.email.localeCompare(b.email)).map(u => `
                     <tr>
                         <td>${u.name ?? "-"}</td>
-                        <td ondblclick="makeEdit('USER', this, ${u.id}, 'email')">${u.email ?? ""}</td>
-                        <td>${u.role}</td>
+                        <td ondblclick="makeEdit('user', this, ${u.id}, 'email')">${u.email ?? ""}</td>
+                        <td ondblclick="makeEdit('user', this, ${u.id}, 'role')">${u.role ?? ""}</td>
                         <td>${u.updatedAt ?? "-"}</td>
                         <td>
                             <button class="action bg-red" id="reset-${u.id}">Reset</button>
@@ -98,34 +98,34 @@ const showScreen = async (screens) => {
             <tbody class="scroll-y">
                 ${screens.map(e => `
                     <tr>
-                        <td ondblclick="makeEditable(this, ${e.id}, 'label')">${e.label ?? ""}</td>
-                        <td ondblclick="makeEditable(this, ${e.id}, 'description')">${e.description ?? ""}</td>
-                        <td ondblclick="makeEditable(this, ${e.id}, 'format')">${e.format ?? ""}</td>
+                        <td ondblclick="makeEdit('screen', this, ${e.id}, 'label')">${e.label ?? ""}</td>
+                        <td ondblclick="makeEdit('screen', this, ${e.id}, 'description')">${e.description ?? ""}</td>
+                        <td ondblclick="makeEdit('screen', this, ${e.id}, 'format')">${e.format ?? ""}</td>
                         <td>
                             <label class="switch">
                                 <input type="checkbox" ${e.visible == 1 ? 'checked' : ''} 
-                                    onchange="toggleScreen(${e.id}, 'visible', this.checked)">
+                                    onchange="makeToggle('screen', ${e.id}, 'visible', this.checked)">
                                 <span class="slider round"></span>
                             </label>
                         </td>
                         <td>
                             <label class="switch">
                                 <input type="checkbox" ${e.running == 1 ? 'checked' : ''} 
-                                    onchange="toggleScreen(${e.id}, 'is_running', this.checked)">
+                                    onchange="makeToggle('screen', ${e.id}, 'running', this.checked)">
                                 <span class="slider round"></span>
                             </label>
                         </td>
                         <td>
                             <label class="switch">
                                 <input type="checkbox" ${e.updating == 1 ? 'checked' : ''} 
-                                    onchange="toggleScreen(${e.id}, 'is_updating', this.checked)">
+                                    onchange="makeToggle('screen', ${e.id}, 'updating', this.checked)">
                                 <span class="slider round"></span>
                             </label>
                         </td>
                         <td>
                             <label class="switch">
                                 <input type="checkbox" ${e.controlled == 1 ? 'checked' : ''} 
-                                    onchange="toggleScreen(${e.id}, 'is_controlled', this.checked)">
+                                    onchange="makeToggle('screen', ${e.id}, 'controlled', this.checked)">
                                 <span class="slider round"></span>
                             </label>
                         </td>
@@ -135,436 +135,35 @@ const showScreen = async (screens) => {
         </table>`
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* screens */
-
-const addUser = async () => {
-    let req = {
-        data: {
-            email: document.getElementById("email").value ?? null,
-        }
-    }
-
-    let res = await fetch(`../../api.php?action=MANAGE_ADD_USER`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
-    })
-
-    res = await res.json()
-    console.log(res)
-
-    showStatus(res)
-
-    api()
-}
-
-
-
-
-const resetUser = async (u) => {
-    let choix = confirm(`Réinitialiser le mot de passe de ${u.email} ?`)
+const showSession = async (sessions) => {
+    const div = document.getElementById("content-session")
+    if(!div) return
     
-    if(choix) {
-        let req = {
-            id: u.id
-        }
-
-        let res = await fetch(`../../api.php?action=MANAGE_RESET_USER`, {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(req)
-        })
-
-        res = await res.json()
-        console.log(res)
-
-        showStatus(res)
-
-        api()
-    }
-}
-
-window.makeEdit = (table, element, id, field) => {
-    const oldValue = element.innerText
-    const input = document.createElement("input")
+    div.innerHTML = `
+        <table>
+            <thead>
+                <th style="width: 25%;">Name</th>
+                <th style="width: 30%;">Email</th>
+                <th style="width: 20%;">Connected</th>
+                <th style="width: 20%;">Expires</th>
+                <th style="width: 10%;">Token</th>
+            </thead>
+            <tbody class="scroll-y">
+                ${sessions
+                    .sort((a, b) => b.connectedAt.localeCompare(a.connectedAt))
+                    .map(s => {return `
+                        <tr>
+                            <td>${s.name ?? "-"}</td>
+                            <td>${s.email}</td>
+                            <td>${s.connectedAt}</td>
+                            <td>${s.expiresAt}</td>
+                            <td class="scroll-x" style="max-width: 200px;">${s.token}</td>
+                        </tr>
+                    `}).join("")}
+            </tbody>
+        </table>`
     
-    input.type = "text";
-    input.value = oldValue === '---' ? '' : oldValue
-    input.style.width = "100%"; // S'adapte à la cellule
-    
-    element.innerHTML = ""
-    element.appendChild(input)
-    input.focus()
-
-    // Sauvegarde les données
-    const save = async () => {
-        const newValue = input.value
-        if (newValue !== oldValue) {
-            await update(table, id, field, newValue)
-        }
-        element.innerText = newValue || '---'
-    };
-
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter") save() })
-    input.addEventListener("blur", save); // Sauvegarde si on clique ailleurs
 }
-
-
-const update = async (table, id, field, value) => {
-    await api("MANAGE_UPDATE_" + table, {
-        userId: id,
-        data: {
-            [field]: value
-        }
-    })
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* screens */
-
-const addScreen = async () => {
-    let req = {
-        data: {
-            label: document.getElementById("name").value ?? null,
-        }
-    }
-
-    let res = await fetch(`../../api.php?action=MANAGE_ADD_SCREEN`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
-    })
-
-    res = await res.json()
-
-    api()
-}
-
-window.toggleScreen = async (id, field, isChecked) => {
-    const value = isChecked ? 1 : 0;
-
-    let res = await fetch(`../../api.php?action=MANAGE_UPDATE_SCREEN`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            screenId: id,
-            data: {
-                [field]: value
-            }
-        })
-    });
-
-    res = await res.json();
-    
-    console.log(res)
-
-}
-
-window.makeEditable = (element, id, field) => {
-    const oldValue = element.innerText
-    const input = document.createElement("input")
-    
-    input.type = "text";
-    input.value = oldValue === '---' ? '' : oldValue
-    input.style.width = "100%"; // S'adapte à la cellule
-    
-    element.innerHTML = ""
-    element.appendChild(input)
-    input.focus()
-
-    // Sauvegarde les données
-    const save = async () => {
-        const newValue = input.value
-        if (newValue !== oldValue) {
-            await updateScreen(id, field, newValue)
-        }
-        element.innerText = newValue || '---'
-    };
-
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter") save() })
-    input.addEventListener("blur", save); // Sauvegarde si on clique ailleurs
-}
-
-
-const updateScreen = async (id, field, value) => {
-    let req = {
-        screenId: id,
-        data: {
-            [field]: value
-        }
-    }
-
-    let res = await fetch(`../../api.php?action=MANAGE_UPDATE_SCREEN`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
-    })
-    res = await res.json()
-    api()
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* session */
 
 
 
@@ -606,159 +205,141 @@ const showPermission = async (permissions) => {
         addPermission()
     })
 
-    let res1 = await fetch(`../../api.php?action=MANAGE_GET_USER`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-    })
-    res1 = await res1.json()
+    let res1 = await api("MANAGE_GET_USER")
+    res1.json()
+    let res2 = await api("MANAGE_GET_SCREEN")
+    res2.json()
 
-    let res2 = await fetch(`../../api.php?action=MANAGE_GET_SCREEN`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({})
-    })
-    res2 = await res2.json()
-    
-    document.getElementById("select-user").innerHTML = `
+    showSelect(res1.data, res2.data)
+}
+
+const showSelect = async (users, screens) => {
+    let div = document.getElementById("select-user")
+    if(div) {
+        div.innerHTML = `
         <option value="">User</option>
-        ${res1.data.sort((a,b) => a.email.localeCompare(b.email)).map(u => {
+        ${users.sort((a,b) => a.email.localeCompare(b.email)).map(u => {
             return   `<option value="${u.id}">${u.email}</option>`
         }).join("")}`
-    
-    document.getElementById("select-screen").innerHTML = `
+    }
+
+    div = document.getElementById("select-screen")
+    if(div) {
+        div.innerHTML = `
         <option value="">Screen</option>
-        ${res2.data.sort((a,b) => a.label.localeCompare(b.label)).map(e => {
+        ${screens.sort((a,b) => a.label.localeCompare(b.label)).map(e => {
             return   `<option value="${e.id}">${e.label}</option>`
         }).join("")}`
+    }
+}
+
+
+const addUser = async () => {
+    await api("MANAGE_ADD_USER", {
+        data: {
+            email: document.getElementById("email").value ?? null,
+        }
+    })
+    search()
+}
+
+const resetUser = async (u) => {
+    if(confirm(`Réinitialiser le mot de passe de ${u.email} ?`)) {
+        await api("MANAGE_RESET_USER", {
+            id: u.id
+        })
+    }
+    search()
+}
+
+const addScreen = async () => {
+    await api("MANAGE_ADD_SCREEN", {
+        data: {
+            label: document.getElementById("name").value ?? null,
+        }
+    })
+    search()
 }
 
 const addPermission = async (p) => {
-    let req = {
+    await api("MANAGE_ADD_PERMISSION", {
         data: {
             userId: document.getElementById("select-user").value,
             screenId: document.getElementById("select-screen").value,
         }
-    }
-
-    let res = await fetch(`../../api.php?action=MANAGE_ADD_PERMISSION`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
     })
-
-    res = await res.json()
-
-    api()
+    search()
 }
 
 
 const deletePermission = async (p) => {
-    let req = {
+    await api("MANAGE_DELETE_PERMISSION", {
         id: p.id
-    }
-
-    let res = await fetch(`../../api.php?action=MANAGE_DELETE_PERMISSION`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
     })
-
-    res = await res.json()
-    console.log(res)
-
-    api()
+    search()
 }
 
 
+const update = async (table, id, field, value) => {
+    await api("MANAGE_UPDATE_" + table.toUpperCase(), {
+        userId: id,
+        screenId: id,
+        data: {
+            [field]: value
+        }
+    })
+    search()
+}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* session */
-
-const showSession = async (sessions) => {
-    const div = document.getElementById("content-session")
-    if(!div) return
+window.makeEdit = (table, element, id, field) => {
+    const oldValue = element.innerText
+    const input = document.createElement("input")
     
-    div.innerHTML = `
-        <table>
-            <thead>
-                <th style="width: 25%;">Name</th>
-                <th style="width: 30%;">Email</th>
-                <th style="width: 20%;">Connected</th>
-                <th style="width: 20%;">Expires</th>
-                <th style="width: 10%;">Token</th>
-            </thead>
-            <tbody class="scroll-y">
-                ${sessions
-                    .sort((a, b) => b.connectedAt.localeCompare(a.connectedAt))
-                    .map(s => {return `
-                        <tr>
-                            <td>${s.name ?? "-"}</td>
-                            <td>${s.email}</td>
-                            <td>${s.connectedAt}</td>
-                            <td>${s.expiresAt}</td>
-                            <td class="scroll-x" style="max-width: 200px;">${s.token}</td>
-                        </tr>
-                    `}).join("")}
-            </tbody>
-        </table>`
+    input.type = "text";
+    input.value = oldValue === '---' ? '' : oldValue
+    input.style.width = "100%"; // S'adapte à la cellule
     
+    element.innerHTML = ""
+    element.appendChild(input)
+    input.focus()
+
+    // Sauvegarde les données
+    const save = async () => {
+        const newValue = input.value
+        if (newValue !== oldValue) {
+            await update(table, id, field, newValue)
+        }
+        element.innerText = newValue || '---'
+    };
+
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") save() })
+    input.addEventListener("blur", save); // Sauvegarde si on clique ailleurs
+}
+
+
+window.makeToggle= async (table, id, field, isChecked) => {
+    const value = isChecked ? 1 : 0;
+    let req = {
+        screenId: id,
+        data: {
+            [field]: value
+        }
+    }
+
+    await api("MANAGE_UPDATE_" + table.toUpperCase(), req)
 }
 
 
 const search = async () => {
     const params = new URLSearchParams(window.location.search)
     const table = params.get("table")
-
-    let maps = {
-        "screens": "SCREEN",
-        "users": "USER",
-        "permissions": "PERMISSION",
-        "sessions": "SESSION"
-    }
     
     if(!table) {
         return
     }
-
-    //console.log(maps[table])
-
-    let req = {}
-        
-    let res = await fetch(`../../api.php?action=MANAGE_GET_${maps[table]}`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
-    })
-
-    res = await res.json()
-    console.log(res)
+    
+    let res = await api("MANAGE_GET_" + table.toUpperCase())
 
     const div = document.getElementById("main")
 

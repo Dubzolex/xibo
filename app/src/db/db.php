@@ -60,17 +60,19 @@ public function delete($table, $id) {
     return $stmt->execute(["id" => $id]);
 }
 
-public function update($table, $data, $where) {
+public function update($table, $id, $data) {
     $setParts = [];
     $values = [];
+
     foreach ($data as $col => $val) {
         $setParts[] = "`$col` = ?";
         $values[] = $val;
     }
-    $values[] = $where;
+    $values[] = $id;
 
-    $sql = "UPDATE `$table` SET" . implode(", ", $setParts) . " WHERE id = ?";
+    $sql = "UPDATE `$table` SET " . implode(", ", $setParts) . " WHERE id = ?";
     $stmt = $this->pdo->prepare($sql);
+    
     return $stmt->execute($values);
 }
 

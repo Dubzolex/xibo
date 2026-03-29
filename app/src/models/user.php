@@ -23,6 +23,9 @@ private function transform($data) {
     if(isset($data["passwordChangedAt"])) {
         $result["password_changed_at"] = $data["passwordChangedAt"];
     }
+    if(isset($data["role"])) {
+        $result["role_id"] = $data["role"];
+    }
     
     return $result;
 }

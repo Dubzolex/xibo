@@ -8,7 +8,7 @@ services:
       - "80:80"
     volumes:
       - /srv/dev-disk-by-uuid-4d1eafa4-ed40-4d69-bf8c-6784eb88a3ce/xibo/app:/var/www/html:ro
-      - /srv/dev-disk-by-uuid-4d1eafa4-ed40-4d69-bf8c-6784eb88a3ce/xibo/screen:/var/www/html/images:ro
+      - /srv/dev-disk-by-uuid-4d1eafa4-ed40-4d69-bf8c-6784eb88a3ce/xibo/media:/var/www/html/images:ro
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - php
@@ -22,7 +22,7 @@ services:
     container_name: php
     volumes:
       - /srv/dev-disk-by-uuid-4d1eafa4-ed40-4d69-bf8c-6784eb88a3ce/xibo/app:/var/www/html
-      - /srv/dev-disk-by-uuid-4d1eafa4-ed40-4d69-bf8c-6784eb88a3ce/xibo/screen:/var/www/html/images
+      - /srv/dev-disk-by-uuid-4d1eafa4-ed40-4d69-bf8c-6784eb88a3ce/xibo/media:/var/www/html/images
     networks:
       - webnet
     restart: unless-stopped

@@ -94,7 +94,8 @@ public function updateUser($id, $data) {
     } catch (PDOException $e) {
         return [
             "success"=> false,
-            "message"=> "Problème serveur.",
+            "message"=> "Problème serveur. ici",
+            "id" => $id,
             "error"=> $e->getMessage()
         ];
     }
@@ -210,6 +211,7 @@ public function updateScreen($id, $data) {
         return [
             "success"=> false,
             "message"=> "Problème serveur.",
+            "id" => $id,
             "error"=> $e->getMessage()
         ];
     }
