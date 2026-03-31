@@ -1,8 +1,9 @@
 import { api } from "/js/client.js"
-import { verifySession } from "../js/client.js"
 import { isImage, isVideo } from "../js/utils/media.js"
 
-verifySession()
+import { showMenu } from "/js/menu.js"
+
+showMenu()
 
 
 let screenId = null
@@ -80,30 +81,44 @@ const showImages = async (images) => {
 
 
 const uploadImage = async () => {
-    const input = document.getElementById("file")
+    const input = document.getElementById("file");
 
     if (!input.files.length) {
-        alert("No image selected !")
+        alert("No image selected!");
         return;
     }
 
-    // Ajouter chaque fichier
-    let images = []
+    const formData = new FormData();
+
+    // ajouter l'id
+    formData.append("screenId", screenId);
+
+    // ajouter les fichiers
     for (let file of input.files) {
-        images.append(file)
+        formData.append("file[]", file);
     }
-    
-    let res = await api("EDITOR_UPLOAD", {
-        screenId: screenId,
-        images
-    })
-    
-}
+
+    try {
+        const res = await fetch(`/api.php?action=EDITOR_UPLOAD`, {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await res.json();
+
+        console.log("Response:", data);
+
+        search2()
+
+    } catch (err) {
+        console.error("Upload error:", err);
+    }
+};
 
 
 
 const deleteImage = async () => {
-    let res = await api("EDITOR_GET", {
+    let res = await api("EDITOR_SHOW", {
         token: localStorage.getItem("token"),
         screenId: screenId
     })
@@ -130,16 +145,12 @@ const deleteImage = async () => {
         return
     }
 
-    try {
-        let res = await api("EDITOR_DELETE", {
-            screenId: screenId,
-            images: mediaSelected
-        })
-        
-    } catch(e){
-        alert("Un problème est survenu !")
-        console.error(e)
-    } 
+    await api("EDITOR_DELETE", {
+        screenId: screenId,
+        images: mediaSelected
+    })
+
+    search2()
 }
 
 
@@ -169,16 +180,21 @@ const search = async () => {
 
     if(!screenId) return
 
+    search2()
+}
+
+const search2 = async () => {
     // images
-    let res2 = await api("EDITOR_SHOW", {
+    let res = await api("EDITOR_SHOW", {
         token: localStorage.getItem("token"),
         screenId: screenId
     })
     
-    if(res2.html) {
-        document.getElementById("content").innerHTML = res2.html ?? null
+    if(res.html) {
+        document.getElementById("content").innerHTML = res.html ?? null
         buttonAction() 
-        showImages(res2.data)
+        showImages(res.data)
     }
 }
+
 search()

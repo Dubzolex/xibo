@@ -15,7 +15,7 @@ private function transform($data) {
         $result["token"] = $data["token"];
     }
     if(isset($data["userId"])) {
-        $result["password"] = $data["userId"];
+        $result["user_id"] = $data["userId"];
     }
     if(isset($data["connectedAt"])) {
         $result["connected_at"] = $data["connectedAt"];
@@ -29,8 +29,7 @@ private function transform($data) {
 
 public function add($data) {
     $result = $this->transform($data);
-    
-    return $this->db->insert("session", $result);
+    return $this->db->insert("sessions", $result);
 }
 
 public function delete($id) {

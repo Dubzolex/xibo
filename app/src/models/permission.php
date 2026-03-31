@@ -36,7 +36,7 @@ public function delete($id) {
 public function getAll() {
     $sql = "SELECT permissions.*, users.name, users.email, screens.label FROM permissions LEFT JOIN users ON users.id = permissions.user_id LEFT JOIN screens ON screens.id = permissions.screen_id;";
 
-    return $this->db->queryAll($sql);
+    return $this->db->fetchAll($sql);
 }
 
 }

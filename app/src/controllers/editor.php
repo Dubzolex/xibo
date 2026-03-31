@@ -55,7 +55,7 @@ public function show($token, $screenId) {
     try {
         $html = '
             <div class="fx-row w-600 jc-between ai-center gap-20 container px-20 py-10 mx-20">
-                <div class="fx-row ai-center">
+                <div class="fx-row ai-center gap-10">
                     <input type="file" id="file" name="file[]" accept=".png, .jpg, .jpeg, .mp4" multiple>
                     <button id="upload" class="action bg-green">Upload</button>
                 </div>

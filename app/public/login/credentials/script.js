@@ -1,34 +1,4 @@
-import { showStatus } from "../../frontend/utils.js"
-
-const api = async () => {
-    const param = new URLSearchParams(window.location.search)
-
-    let req = {
-        type: param.get("edit")
-    }
-
-    let res = await fetch(`../../api.php?action=PROFIL_EDIT`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
-    })
-
-    res = await res.json()
-    console.log(res)
-
-    document.getElementById("content").innerHTML = res.html
-
-
-    const btn = document.getElementById("save")
-    if(btn) {
-        btn.addEventListener("click", () => {
-            save()
-        })
-    }
-}
-api()
+import { api, showStatus } from "/js/client.js"
 
 
 const save = async () => {
@@ -45,18 +15,7 @@ const save = async () => {
         }
     });
 
-    console.log(req)
-
-    let res = await fetch(`../../api.php?action=PROFIL_SAVE`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(req)
-    })
-
-    res = await res.json()
-
+    let res = await api("PROFIL_SAVE", req)
     console.log(res)
 
     showStatus(res)
@@ -65,3 +24,22 @@ const save = async () => {
         window.location.href = "../account/"
     }
 }
+
+
+const search = async () => {
+    const param = new URLSearchParams(window.location.search)
+
+    let res = await api("PROFIL_EDIT", {
+        type: param.get("edit")
+    })
+
+    document.getElementById("content").innerHTML = res.html
+
+    const btn = document.getElementById("save")
+    if(btn) {
+        btn.addEventListener("click", () => {
+            save()
+        })
+    }
+}
+search()

@@ -1,9 +1,9 @@
 import { api } from "/js/client.js"
-import { verifySession } from "../js/client.js"
 import { isImage, isVideo } from "../js/utils/media.js"
 
+import { showMenu } from "/js/menu.js"
 
-verifySession()
+showMenu()
 
 const show = async (media) => {
     const div = document.getElementById("content")

@@ -1,5 +1,3 @@
-import { showMenu } from "./modules/menu.js"
-
 export const api = async (action, req = {}) => {
     let res = await fetch(`/api.php?action=${action}`, {
         method: "POST",
@@ -10,7 +8,12 @@ export const api = async (action, req = {}) => {
     })
 
     res = await res.json()
-    console.log("Request:", req, "Action:", action, "Response:", res)
+
+    console.warn("")
+    console.log("Request:", req)
+    console.log("Action:", action)
+    console.log("Response:", res)
+
     showStatus(res)
     return res
 }
@@ -29,7 +32,7 @@ export const showStatus = async (data, element = "status") => {
     const div = document.getElementById(element)
     if(div) {
         div.classList.remove("green", "red")
-        div.innerHTML = data.message
+        div.innerHTML = data.message ?? null
 
         if(data.success) {
             div.classList.add("green")
@@ -49,8 +52,6 @@ export const verifySession = async () => {
     })
 
     if(!res.success) {
-        //window.location.href = "/login/"
+        window.location.href = "/login/"
     }
-
-    showMenu(res.html)
 }

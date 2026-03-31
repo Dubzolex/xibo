@@ -7,7 +7,7 @@ private $sessionModel;
 
 public function __construct($db) {
     $this->userModel = new User($db);
-    $this->session = new Session($db);
+    $this->sessionModel = new Session($db);
 }
 
 public function connect($email, $password) {  
@@ -27,14 +27,14 @@ public function connect($email, $password) {
             ];
         }
         
-        if (isset($user["password"]) && password_verify((string)$password, $user['password'])) {
+        if (isset($user["password"]) && password_verify($password, $user['password'])) {
             $token = bin2hex(random_bytes(32));
             $date = new DateTime();
             $expiresAt = (clone $date)->modify("+7 days")->format("Y-m-d H:i:s");
             
             try {
                 $session = [
-                    "user_id" => $user["id"] ?? throw new Exception("No user id."),
+                    "userId" => $user["id"] ?? throw new Exception("No user id."),
                     "token" => $token ?? throw new Exception("No token generate."),
                     "expiresAt" => $expiresAt
                 ];
@@ -43,9 +43,9 @@ public function connect($email, $password) {
 
             } catch (PDOException $e) {
                 return [
-                    "success"=> false,
+                    "success" => false,
                     "message" => "Session perdu.",
-                    "error"=> $e->getMessage()
+                    "error" => $e->getMessage()
                 ];
             }
         
@@ -61,6 +61,11 @@ public function connect($email, $password) {
         return [
             "success" => false,
             "message" => "Mot de passe incorrect.",
+            "data" => [
+                "send" => $password,
+                "send_hash" => password_hash($password, PASSWORD_DEFAULT),
+                "hash" => $user["password"]
+            ]
         ];
 
     } catch(PDOException $e) {
@@ -84,7 +89,7 @@ public function verify($token, $role = 1) {
             return [
                 "success" => false,
                 "message" => "Token invalide.",
-                "url" => "/login/",
+                //"url" => "/login/",
             ];
         }
 
@@ -93,6 +98,32 @@ public function verify($token, $role = 1) {
         return [
             "success"=> true,
             "message"=> "Utilisateur connecté.",
+            "data" => [
+                "role" => $role,
+                "user" => $user
+            ]
+        ];
+
+    } catch(Exception $e) {
+        return [
+            "success" => false,
+            "message" => "Problème serveur.",
+            "error" => $e->getMessage(),
+            "url" => "/login/",
+            "data" => [
+                "token" => $token
+            ]
+        ];
+    }
+}
+
+public function authorize($token) {
+    try {
+        $user = $this->userModel->verify($token);
+
+        $role = $user["role_id"] ?? null;
+
+        return [
             "html" => $this->show($role),
             "data" => [
                 "role" => $role,
@@ -113,16 +144,24 @@ public function verify($token, $role = 1) {
     }
 }
 
-private function show($role) {
+
+
+
+
+
+
+private function show($role) { 
     $home = '<a href="/home/"><h4>Home</h4></a>';
     $edit = '<a href="/roles/"><h4>Edit</h4></a>';
     $profil = '<a href="/login/account/"><h4>Profil</h4></a>';
     $manage = '<a href="/roles/manage/"><h4>Manage</h4></a>';
 
+    if($role == null) {
+        return null;
+    }
     if($role > 1) {
         return $home . $edit . $manage . $profil;
     }
-
     return $home . $edit . $profil;
 }
 

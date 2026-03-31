@@ -41,7 +41,8 @@ public function getUsers() {
                 "email" => $user["email"] ?? null,
                 "role" => $user["role"] ?? null,
                 "updatedAt" => $user["updated_at"] ?? null,
-                "changedAt" => $user["password_changed_at"] ?? null
+                "changedAt" => $user["password_changed_at"] ?? null,
+                "password" => $user["password"] ?? null
             ];
         }, $users);
         
@@ -63,12 +64,13 @@ public function getUsers() {
 
 public function addUser(array $data) {
     try {
+        $email = $data["email"] ?? throw new Exception("No email.");
         $pwd = bin2hex(random_bytes(6));
-        $data["password"] = password_hash($pwd, PASSWORD_DEFAULT);
+        $data["password"] = $pwd;
 
         return [
             "success" => $this->userModel->add($data),
-            "alert" => "Mot de passe généré pour " . $data["email"]  . " : " . $pwd
+            "alert" => "Mot de passe généré pour " . $email . " : " . $pwd
         ];
 
     } catch (PDOException $e) {
@@ -114,12 +116,12 @@ public function resetUser(int $id) {
     try {
         $pwd = bin2hex(random_bytes(6));
         $data = [
-            "password" => password_hash($pwd, PASSWORD_DEFAULT),
-            "passwordChangedAt" => null,
+            "password" => $pwd,
+            "password_changed_at" => null,
         ];
 
         return [
-            "success" => $this->userModel->update($id, $data),
+            "success" => $this->userModel->reset($id, $data),
             "alert" => "Nouveau mot de passe : " . $pwd
         ];
 
@@ -222,10 +224,10 @@ public function updateScreen($id, $data) {
 public function getPermissions() {
     $html = '
         <div class="fx-row jc-center px-20">
-            <div class="fx-row container w-600 px-20 py-20 jc-between gap-20">
-                <div class="fx-row gap-20">
-                <select id="select-user"></select>
-                <select id="select-screen"></select>
+            <div class="fx-row container w-600 px-20 py-20 jc-between gap-20 wrap">
+                <div class="fx-row gap-20 wrap jc-between">
+                    <select id="select-user"></select>
+                    <select id="select-screen"></select>
                 </div>
                 <button class="action bg-green" id="add-permission">Add</button>
             </div>
@@ -235,8 +237,9 @@ public function getPermissions() {
         </div>';
 
     try {
+        //
         $permissions = $this->permissionModel->getAll();
-
+    
         $results = array_map(function($p) {
             return [
                 "id"    => $p["id"] ?? null,
@@ -266,8 +269,8 @@ public function getPermissions() {
 public function addPermission($data) {
     try {
         $req = [
-            "user_id" => $data["userId"] ?? throw new Exception("No user id"),
-            "screen_id" => $data["screenId"] ?? throw new Exception("No screen id"),
+            "userId" => $data["userId"] ?? throw new Exception("No user id"),
+            "screenId" => $data["screenId"] ?? throw new Exception("No screen id"),
         ];
 
         try {

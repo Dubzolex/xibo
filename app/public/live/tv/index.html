@@ -3,50 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diaporama Compatible</title>
-    <style>
-        body { margin: 0; background: black; cursor: none; overflow: hidden; }
-        #media { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .media-item { position: absolute; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 1s ease-in-out; }
-        .media-item.show { opacity: 1; }
-        p { color: white; font-size: 40px; font-family: Arial, sans-serif; text-align: center; }
-    </style>
+    <title>Diaporama</title>
 </head>
 <body>
     <div class="container">
-        <div id="media" class="media">Chargement...</div>
+        <div id="media" class="media"></div>
     </div>
-    
+
 <script>
-// --- Polyfills de base pour vieux navigateurs ---
-if (!window.localStorage) {
-    window.localStorage = { getItem: function() { return null; }, setItem: function() {} };
+var data = null;
+var TRANSITION_DURATION = 500; // ms
+
+function initApp() {
+    try {
+        var params = new URLSearchParams(window.location.search);
+        var id = params.get("s");
+
+        if (!id) {
+            window.location.href = "./";
+            return;
+        }
+
+        localStorage.setItem("screen", id);
+        startLoop();
+
+    } catch(e) {
+        noMediaFound();
+        wait(1000000);
+    }
 }
 
-// --- Variables globales (Utilisation de VAR uniquement) ---
-var data = null;
-var TRANSITION_DURATION = 500;
-var container = document.getElementById("media");
+function startLoop() {
+    (function loop() {
+        load(function() {
+            addLogs(function() {
+                showMedia(function() {
+                    setTimeout(loop, 0);
+                });
+            });
+        });
+    })();
+}
 
-// --- Fonctions utilitaires AJAX (Remplace Fetch) ---
-function ajaxGet(url, callback) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url, true);
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                callback(null, xhr.responseText);
-            } else {
-                callback("Erreur " + xhr.status);
+function load(callback) {
+    try {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "../backend/medias.php", true);
+        xhr.setRequestHeader("Cache-Control", "no-store");
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        data = JSON.parse(xhr.responseText);
+                        showMedia(callback);
+                    } catch(e) {
+                        console.error(e);
+                        callback();
+                    }
+                } else {
+                    console.error("Erreur lors du chargement des médias");
+                    callback();
+                }
+            }
+        };
+        xhr.send();
+    } catch (e) {
+        console.error(e);
+        callback();
+    }
+}
+
+function showMedia(callback) {
+    var container = document.getElementById("media");
+    var screenId = localStorage.getItem("screen");
+    var screen = null;
+
+    if (data && data.length > 0) {
+        for (var i=0; i<data.length; i++) {
+            if (data[i].id == screenId) {
+                screen = data[i];
+                break;
             }
         }
-    };
-    xhr.send();
+    }
+
+    if (!(screen && screen.images && screen.images.length > 0)) {
+        noMediaFound();
+        return wait(10000, callback);
+    }
+
+    if (screen.restart == 1) {
+        window.location.reload();
+        return;
+    }
+
+    (function showNext(index) {
+        if (index >= screen.images.length) {
+            return wait(1000, callback);
+        }
+
+        var item = screen.images[index];
+        var url = "../images/" + screen.id + "/" + item;
+
+        fileExists(url, function(exists) {
+            if (!exists) {
+                showNext(index + 1);
+                return;
+            }
+
+            // IMAGE
+            if (item.match(/\.(png|jpg|jpeg)$/i)) {
+                var img = document.createElement("img");
+                img.src = url;
+                showElement(container, img, (screen.duration || 10) * 1000, function() {
+                    showNext(index + 1);
+                });
+            }
+
+            // VIDEO
+            else if (item.match(/\.(mp4)$/i)) {
+                var video = document.createElement("video");
+                video.src = url;
+                video.autoplay = true;
+                video.muted = true;
+                video.playsInline = true;
+
+                showElement(container, video, 0, function() {
+                    video.onended = video.onerror = function() {
+                        hideElement(video, function() {
+                            showNext(index + 1);
+                        });
+                    };
+                });
+            } else {
+                showNext(index + 1);
+            }
+        });
+
+    })(0);
 }
 
-function checkFileExists(url, callback) {
+function addLogs(filename, callback) {
+    if (!callback && typeof filename === "function") {
+        callback = filename;
+    }
+    if (callback) callback();
+}
+
+function showElement(container, element, duration, callback) {
+    if (!callback && typeof duration === "function") {
+        callback = duration;
+        duration = 0;
+    }
+
+    container.innerHTML = "";
+    container.appendChild(element);
+    element.className += " media-item";
+
+    // Force repaint
+    element.offsetHeight;
+    element.className += " show";
+
+    if (duration > 0) {
+        wait(duration, function() {
+            hideElement(element, callback);
+        });
+    } else if (callback) {
+        callback();
+    }
+}
+
+function hideElement(element, callback) {
+    element.className = element.className.replace(/\bshow\b/, "");
+    wait(TRANSITION_DURATION, callback);
+}
+
+function noMediaFound() {
+    try {
+        document.getElementById("media").innerHTML = '<p>No media found (png, jpg, mp4...)</p>';
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function fileExists(url, callback) {
     var xhr = new XMLHttpRequest();
-    xhr.open('HEAD', url, true);
+    xhr.open("HEAD", url, true);
+    xhr.setRequestHeader("Cache-Control", "no-store");
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             callback(xhr.status >= 200 && xhr.status < 300);
@@ -55,131 +198,52 @@ function checkFileExists(url, callback) {
     xhr.send();
 }
 
-// --- Logique de l'application ---
-function initApp() {
-    var params = window.location.search.substring(1).split('&');
-    var id = null;
-    for (var i = 0; i < params.length; i++) {
-        var pair = params[i].split('=');
-        if (pair[0] === 's') id = pair[1];
-    }
-
-    if (!id) {
-        id = localStorage.getItem("screen");
-        if (!id) {
-            container.innerHTML = "<p>ID manquant (?s=ID)</p>";
-            return;
-        }
-    }
-
-    localStorage.setItem("screen", id);
-    loadAndLoop();
+function wait(ms, callback) {
+    setTimeout(callback || function(){}, ms);
 }
 
-function loadAndLoop() {
-    ajaxGet("../backend/medias.php?t=" + new Date().getTime(), function(err, response) {
-        if (err) {
-            console.error(err);
-            setTimeout(loadAndLoop, 10000);
-            return;
-        }
-        
-        try {
-            data = JSON.parse(response);
-            startSlideshow();
-        } catch(e) {
-            setTimeout(loadAndLoop, 10000);
-        }
-    });
-}
-
-function startSlideshow() {
-    var screenId = localStorage.getItem("screen");
-    var screenData = null;
-
-    for (var i = 0; i < data.length; i++) {
-        if (data[i].id == screenId) {
-            screenData = data[i];
-            break;
-        }
-    }
-
-    if (!screenData || !screenData.images || screenData.images.length === 0) {
-        container.innerHTML = "<p>Aucun média trouvé</p>";
-        setTimeout(loadAndLoop, 10000);
-        return;
-    }
-
-    if (screenData.restart == 1) {
-        window.location.reload();
-        return;
-    }
-
-    playMediaSequence(screenData, 0);
-}
-
-function playMediaSequence(screenData, index) {
-    // Si on a fini la liste, on recharge les données JSON pour voir s'il y a du nouveau
-    if (index >= screenData.images.length) {
-        loadAndLoop();
-        return;
-    }
-
-    var fileName = screenData.images[index];
-    var url = "../images/" + screenData.id + "/" + fileName;
-    
-    checkFileExists(url, function(exists) {
-        if (!exists) {
-            playMediaSequence(screenData, index + 1);
-            return;
-        }
-
-        var element;
-        var isVideo = fileName.toLowerCase().indexOf(".mp4") !== -1;
-
-        if (isVideo) {
-            element = document.createElement("video");
-            element.src = url;
-            element.autoplay = true;
-            element.muted = true;
-            element.setAttribute("playsinline", "true");
-            
-            element.onended = function() {
-                playMediaSequence(screenData, index + 1);
-            };
-            element.onerror = function() {
-                playMediaSequence(screenData, index + 1);
-            };
-        } else {
-            element = document.createElement("img");
-            element.src = url;
-        }
-
-        // Affichage
-        container.innerHTML = "";
-        element.className = "media-item";
-        container.appendChild(element);
-
-        // Force transition
-        setTimeout(function() {
-            element.className = "media-item show";
-        }, 50);
-
-        // Si c'est une image, on attend la durée définie avant de passer à la suivante
-        if (!isVideo) {
-            var duration = (screenData.duration || 10) * 1000;
-            setTimeout(function() {
-                element.className = "media-item"; // Hide
-                setTimeout(function() {
-                    playMediaSequence(screenData, index + 1);
-                }, 1000);
-            }, duration);
-        }
-    });
-}
-
-// Lancement
 initApp();
 </script>
+
+<style>
+body {
+    margin: 0;
+    background: black;
+    cursor: none;
+}
+
+#media {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* MEDIA ELEMENTS */
+.media-item {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    will-change: opacity;
+}
+
+.media-item.show {
+    opacity: 1;
+}
+
+p {
+    color: white;
+    font-size: 60px;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: center;
+}
+</style>
+
 </body>
 </html>

@@ -1,8 +1,7 @@
 import { api } from "/js/client.js"
-import { verifySession } from "/js/client.js"
+import { showMenu } from "/js/menu.js"
 
-
-verifySession()
+showMenu()
 
 
 const button = () => {
@@ -206,10 +205,7 @@ const showPermission = async (permissions) => {
     })
 
     let res1 = await api("MANAGE_GET_USER")
-    res1.json()
     let res2 = await api("MANAGE_GET_SCREEN")
-    res2.json()
-
     showSelect(res1.data, res2.data)
 }
 
@@ -261,11 +257,11 @@ const addScreen = async () => {
     search()
 }
 
-const addPermission = async (p) => {
+const addPermission = async () => {
     await api("MANAGE_ADD_PERMISSION", {
         data: {
-            userId: document.getElementById("select-user").value,
-            screenId: document.getElementById("select-screen").value,
+            userId: Number(document.getElementById("select-user").value),
+            screenId: Number(document.getElementById("select-screen").value),
         }
     })
     search()
@@ -320,14 +316,12 @@ window.makeEdit = (table, element, id, field) => {
 
 window.makeToggle= async (table, id, field, isChecked) => {
     const value = isChecked ? 1 : 0;
-    let req = {
+    await api("MANAGE_UPDATE_" + table.toUpperCase(), {
         screenId: id,
         data: {
             [field]: value
         }
-    }
-
-    await api("MANAGE_UPDATE_" + table.toUpperCase(), req)
+    })
 }
 
 
@@ -344,7 +338,7 @@ const search = async () => {
     const div = document.getElementById("main")
 
     if(div && res.html) {
-        div.innerHTML = res.html
+        div.innerHTML = res.html ?? null
         showUser(res.data)
         showScreen(res.data)
         showSession(res.data)

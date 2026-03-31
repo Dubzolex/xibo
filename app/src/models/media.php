@@ -29,15 +29,30 @@ public function get($screenId) {
 
 public function upload($screenId, $files) {
     try {
+        if (!$screenId) {
+            return [
+                "success" => false,
+                "message" => "No screen id.",
+                "id" => $screenId
+            ];
+        }
+
         $path = $this->dir . $screenId . "/";
 
         if (!is_dir($path)) {
             mkdir($path, 0775, true);
         }
 
-        // Extensions autorisées
         $allowed = ['png', 'jpg', 'jpeg', 'mp4'];
         $uploadedFiles = [];
+
+        // vérifier que file existe
+        if (!isset($files['file'])) {
+            return [
+                "success" => false,
+                "message" => "Aucun fichier reçu"
+            ];
+        }
 
         foreach ($files['file']['tmp_name'] as $key => $tmpName) {
             $fileName = basename($files['file']['name'][$key]);
@@ -46,10 +61,7 @@ public function upload($screenId, $files) {
             if ($fileError !== UPLOAD_ERR_OK) {
                 return [
                     "success" => false,
-                    "message" => "Fichier corrompu: " . $fileName,
-                    "data" => [
-                        "file" => $fileName
-                    ]
+                    "message" => "Fichier corrompu: " . $fileName
                 ];
             }
 
@@ -58,40 +70,36 @@ public function upload($screenId, $files) {
             if (!in_array($extension, $allowed)) {
                 return [
                     "success" => false,
-                    "message" => "Extension non autorisée: " . $fileName,
-                    "data" => [
-                        "file" => $fileName
-                    ]
+                    "message" => "Extension non autorisée: " . $fileName
                 ];
             }
 
-            $destination = $path . $fileName;
+            // éviter collisions
+            $newName = uniqid() . "_" . $fileName;
+            $destination = $path . $newName;
 
             if (!move_uploaded_file($tmpName, $destination)) {
                 return [
                     "success" => false,
-                    "message" => "Image perdu: " . $fileName,
-                    "data" => [
-                        "file" => $fileName
-                    ]
+                    "message" => "Erreur upload: " . $fileName
                 ];
             }
 
-            $uploadedFiles[] = $fileName;
+            $uploadedFiles[] = $newName;
         }
 
         return [
             "success" => true,
-            "message" => "Images chargées avec succès.",
+            "message" => "Upload réussi",
             "data" => [
                 "files" => $uploadedFiles
             ]
         ];
 
-    } catch(Exception $e) {
+    } catch (Exception $e) {
         return [
             "success" => false,
-            "message" => "Erreur lors du chargement des fichiers.",
+            "message" => "Erreur serveur",
             "error" => $e->getMessage()
         ];
     }

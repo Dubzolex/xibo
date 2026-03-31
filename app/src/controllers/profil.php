@@ -13,25 +13,28 @@ public function __construct($db) {
 public function get($token) {
     try {
         $user = $this->userModel->verify($token);
-        if(empty($user)) {
+        if(!$user) {
             return [
                 "success" => false,
-                "message" => "Session invalide."
+                "message" => "Session invalide.",
+                "data" => [
+                    "user" => $user
+                ]
             ];
         }
 
-        $change = $u["password_changed_at"] ?? null;
-        $name = $u["name"] ?? null;
+        $change = $user["password_changed_at"] ?? null;
+        $name = $user["name"] ?? null;
 
-        if (empty($change) && empty($name)) {
+        if ($change == null && $name == null) {
             return $this->credentials("onboarding");
         }
 
-        if (empty($change)) {
+        if ($change == null) {
             return $this->credentials("password");
         } 
             
-        if (empty($name)) {
+        if ($name == null) {
             return $this->credentials("name");
         }
 
@@ -46,10 +49,11 @@ public function get($token) {
     try {
         $user = $this->userModel->getByToken($token);
         
-        if(empty($user)) {
+        if(!$user) {
             return [
                 "success" => false,
-                "message" => "Session invalide."
+                "message" => "Session invalide.",
+                "user" => $user
             ];
         }
 
@@ -59,7 +63,7 @@ public function get($token) {
             "role" => $user["role"],
             "email" => $user["email"],
             "updatedAt" => $user["updated_at"],
-            "screens" => explode(",", $user["label"]) ?? []
+            "screens" => isset($user["label"]) ? explode(",", $user["label"]) : []
         ];
 
         return [

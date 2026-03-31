@@ -37,7 +37,11 @@ public function add($data) {
 
 public function update($id, $data) {
     $result = $this->transform($data);
-    $this->db->update("users", $id, $result);
+    return $this->db->update("users", $id, $result);
+}
+
+public function reset($id, $data) {
+    return $this->db->update("users", $id, $data);
 }
 
 public function updateByToken($token, $data) {
@@ -53,15 +57,15 @@ public function updateByToken($token, $data) {
 
     $sql = "UPDATE users u JOIN sessions s ON u.id = s.user_id SET " . implode(", ", $setParts) . " WHERE s.token = ?";
 
-    $this->db->query($sql, $values);
+    return $this->db->query($sql, $values);
 }
 
 public function delete($id) {
-    $this->db->delete("users", ["id"=> $id]);
+    return $this->db->delete("users", ["id"=> $id]);
 }
 
 public function getAll() {
-    $sql = "SELECT users.id, users.name, users.email, roles.role, created_at, updated_at, password_changed_at FROM users LEFT JOIN roles ON users.role_id = roles.id";
+    $sql = "SELECT users.id, users.name, users.email, roles.role, created_at, updated_at, password_changed_at, users.password FROM users LEFT JOIN roles ON users.role_id = roles.id";
 
     return $this->db->fetchAll($sql);
 }
@@ -73,19 +77,19 @@ public function get($id) {
 }
 
 public function getByEmail(string $email) {
-    $sql = "SELECT id, email password FROM users WHERE users.email = :email";
+    $sql = "SELECT id, email, password FROM users WHERE users.email = :email";
 
     return $this->db->fetch($sql, ["email" => $email]);
 }
 
 public function getByToken(string $token) {
-    $sql = "SELECT u.id, u.name, u.email, r.role, u.updated_at, GROUP_CONCAT(e.label) AS label FROM users u JOIN roles r ON u.role_id = r.id JOIN sessions s ON u.id = s.user_id LEFT JOIN permissions p ON p.user_id = u.id LEFT JOIN screens e ON p.screen_id = e.id WHERE s.token = :token GROUP BY u.id;";
+    $sql = "SELECT u.id, u.name, u.email, r.role, u.updated_at FROM users u LEFT JOIN roles r ON u.role_id = r.id LEFT JOIN sessions s ON u.id = s.user_id WHERE s.token = :token;";
 
     return $this->db->fetch($sql, ["token" => $token]);
 }
 
 public function verify($token) {
-    $sql = "SELECT u.id, u.password_changed_at, u.role_id, u.name FROM users u JOIN roles r ON u.role_id = r.id JOIN sessions s ON u.id = s.user_id WHERE s.expires_at > NOW() AND s.token = :token;";
+    $sql = "SELECT u.id, u.password_changed_at, u.role_id, u.name FROM users u LEFT JOIN sessions s ON u.id = s.user_id WHERE s.expires_at > NOW() AND s.token = :token;";
 
     return $this->db->fetch($sql, ["token" => $token]);
 }

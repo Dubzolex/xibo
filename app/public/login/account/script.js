@@ -1,7 +1,7 @@
 import { api, showStatus } from "/js/client.js"
-//import { verifySession } from "../../frontend/utils.js"
+import { showMenu } from "/js/menu.js"
 
-//verifySession()
+showMenu()
 
 
 const show = async (user) => {

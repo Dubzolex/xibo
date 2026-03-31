@@ -30,6 +30,11 @@ $routes = [
         return $auth->verify($req["token"] ?? $_GET["token"] ?? null);
     },
 
+    "AUTH_SHOW" => function($req) use ($auth) {
+        return $auth->authorize($req["token"] ?? $_GET["token"] ?? null);
+    },
+
+
 
     /* Controller Profil */
     "PROFIL_GET" => function($req) use ($profil) {
@@ -60,9 +65,10 @@ $routes = [
         return $editor->show($req["token"] ?? $_GET["token"] ?? null, $req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null);
     },
 
-    "EDITOR_UPLOAD" => function($req) use ($editor) {
-        return $editor->upload($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null, $req["file[]"] ?? []);
-    },
+    "EDITOR_UPLOAD" => function() use ($editor) {
+        
+        return $editor->upload($_POST["screenId"] ?? $_GET["id"] ?? null, $_FILES);
+},
 
     "EDITOR_DELETE" => function($req) use ($editor) {
         return $editor->delete($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null, $req["images"] ?? []);
