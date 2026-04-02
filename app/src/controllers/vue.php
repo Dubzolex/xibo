@@ -81,7 +81,10 @@ public function renderList($screenId) {
 
     ob_start();
     include __DIR__ . '/../templates/home.list.php';
-    return ob_get_clean();
+    return [
+        "html" => ob_get_clean(),
+        "data" => $data,
+    ];
 }
 
 

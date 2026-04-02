@@ -45,7 +45,7 @@ const uploadImage = async () => {
 
 
 const deleteImage = async () => {
-    let get = await api("EDITOR_SHOW", {
+    let get = await api("SHOW_LIST", {
         token: localStorage.getItem("token"),
         screenId: screenId
     })
@@ -118,8 +118,6 @@ window.upload = () => {
 }
 
 
-
-
 const search = async () => {
     const div = document.getElementById("sidebar")
     if(div) {
@@ -127,7 +125,7 @@ const search = async () => {
             token: localStorage.getItem("token"),
         })
         
-        div.innerHTML = res.html
+        div.innerHTML = res.html ?? null
 
         const param = new URLSearchParams(window.location.search)
         screenId = Number(param.get("s"))
@@ -151,14 +149,14 @@ const search2 = async () => {
 }
 
 const search3 = async () => {
-    const param = new URLSearchParams(window.location.search)
-    screenId = param.get("s")
-
     const div = document.getElementById("list")
     if(div) {
-        div.innerHTML = await api("SHOW_LIST", {
+
+        let res = await api("SHOW_LIST", {
             token: localStorage.getItem("token"),
+            screenId
         })
+        div.innerHTML = res.html ?? null
     }
 }
 

@@ -23,4 +23,4 @@
     </div>
 </aside>
 
-<main class="fx-col grow scroll-y gap-40 p-20" id="main"></main>
+<main class="fx-col grow scroll-y gap-50 p-20" id="main"></main>
