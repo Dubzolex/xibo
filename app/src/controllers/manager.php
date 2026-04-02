@@ -350,17 +350,12 @@ public function show($token) {
             ];
         }
 
-        if($this->authModel->verify($token, 3)) {
+        if($this->authModel->verify($token, 2)) {
             return [
-                "html" => $user . $permission . $session
+                "html" => $permission . $session
             ];
         }
 
-        if($this->authModel->verify($token, 2)) {
-            return [
-                "html" => $permission
-            ];
-        }
 
     } catch(Exception $e) {
         return [

@@ -42,9 +42,16 @@ $routes = [
 
 
     /* Controller Viewer */
-    "VIEWER_GET" => function($req) use ($viewer) { //images page home
-        //Verif token a faire
-        return $viewer->get();
+    "VIEWER_GET" => function($req) use ($viewer, $auth) { //images page home
+        if($auth->verify($req["token"] ?? $_GET["token"] ?? null, 1)) {
+            return $viewer->get();
+
+        } else {
+            return [
+                "url" => "/login/"
+            ];
+        }
+        
     },
 
     "VIEWER_SHOW" => function($req) use ($viewer) {

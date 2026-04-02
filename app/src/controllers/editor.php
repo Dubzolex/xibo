@@ -62,6 +62,7 @@ public function show($token, $screenId) {
                     </div>
                     <button id="delete" class="action bg-red">Delete</button>
                 </div>
+                <div class="fx-col ai-center" style="font-size: 10px">Taille max : 2 mo</div>
                 <div class="fx-row jc-center">
                     <div id="status"></div>
                 </div>
