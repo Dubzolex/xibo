@@ -1,6 +1,4 @@
 import { api } from "/js/client.js"
-import { isImage, isVideo } from "../js/utils/media.js"
-
 import { showMenu } from "/js/menu.js"
 import { showStatus } from "/js/client.js"
 
@@ -8,77 +6,6 @@ showMenu()
 
 
 let screenId = null
-
-const showScreen = async (screens) => {
-    const div = document.getElementById("list-screen")
-
-    if(div.length == 0) {
-        div.innerHTML = `<em>No screen access</em>`
-        return
-    }
-
-    div.innerHTML = screens.map(s => {
-        return `
-        <button id="${s.id}" class="link ${s.id == screenId ? "active" : ""}" >${s.label}</button>`
-    }).join("")
-
-    screens.map(s => {
-        document.getElementById(s.id).addEventListener("click", () => {
-            if(s.id == screenId) {
-                window.location.href = `./`
-
-            } else {
-                window.location.href = `./?s=${s.id}`
-            } 
-        })
-    })
-
-    if(screenId && !screens.map(e => e.id).includes(Number(screenId))) {
-        window.location.href = "./"
-    }
-}
-
-
-const showImages = async (images) => {
-    const div = document.getElementById("list-images")
-
-    if(!images || images.length == 0) {
-        div.innerHTML = `
-        <div class="fx-center">
-            <em>No images found...</em>
-        </div>`
-        return
-    }
-
-    div.innerHTML = images.map(m => {
-        const url = `../images/${screenId}/${m}`
-            
-            if (isImage(m)) {
-                return `
-                    <div class="fx-col ai-center gap-10">
-                        <img src="${url}">
-                        <div class="fx-row ai-center gap-10">
-                            <input id ="${m}" type="checkbox">
-                            <p>${m}</p>
-                        </div>
-                    </div>
-                `
-            } else if (isVideo(m)) {
-                return `
-                    <div class="fx-col ai-center gap-10">
-                        <video autoplay muted playsinline>
-                            <source src="${url}">
-                        </video>
-                        <div class="fx-row ai-center gap-10">
-                            <input id ="${m}" type="checkbox">
-                            <p>${m}</p>
-                        </div>
-                    </div>
-                `
-            }
-            return null
-        }).join("")
-}
 
 
 const uploadImage = async () => {
@@ -156,53 +83,83 @@ const deleteImage = async () => {
 }
 
 
-const buttonAction = async () => {
-    document.getElementById("delete").addEventListener("click", async (e) => {
-        e.preventDefault()
-        await deleteImage()
-    })
+const buttonLink = async (buttons) => {
+    for(let s of buttons) {
+        const btn = document.getElementById(s.id)
 
-    document.getElementById("upload").addEventListener("click", async (e) => {
-        e.preventDefault();
-        await uploadImage()
-    })
+        if(btn) {
+            if(s.id == screenId) {
+                btn.classList.add("active")
+            }
+
+            btn.addEventListener("click", () => {
+                if(s.id == screenId) {
+                    window.location.href = `./`
+
+                } else {
+                    window.location.href = `./?s=${s.id}`
+                } 
+            })
+        }
+    }
+
+    if(screenId && !buttons.map(e => e.id).includes(Number(screenId))) {
+        window.location.href = "./"
+    }
 }
 
-       
+
+window.delete = () => {
+    deleteImage()
+}
+
+window.upload = () => {
+    uploadImage()
+}
+
+
+
+
 const search = async () => {
-    // screens
-    let res = await api("EDITOR_GET", {
-        token: localStorage.getItem("token")
-    })
+    const div = document.getElementById("sidebar")
+    if(div) {
+        let res = await api("SHOW_SIDEBAR", {
+            token: localStorage.getItem("token"),
+        })
+        
+        div.innerHTML = res.html
 
-    const param = new URLSearchParams(window.location.search)
-    screenId = param.get("s")
-    
-    if(res.data.length > 0) {
-        await showScreen(res.data)
+        const param = new URLSearchParams(window.location.search)
+        screenId = Number(param.get("s"))
+        await buttonLink(res.data)
+
+        if(!screenId) return
+
+        search2()
     }
-    
-
-    if(!screenId) return
-
-    search2()
 }
 
 const search2 = async () => {
-    // images
-    let res = await api("EDITOR_SHOW", {
-        token: localStorage.getItem("token"),
-        screenId: screenId
-    })
-
-    const div = document.getElementById("content")
-    
-    if(res.html && div && !div.innerHTML) {
-        div.innerHTML = res.html
-        buttonAction() 
+    const div = document.getElementById("main")
+    if(div) {
+        div.innerHTML = await api("SHOW_MAIN", {
+            token: localStorage.getItem("token"),
+        })
+        
+        search3()
     }
+}
 
-    showImages(res.data)
+const search3 = async () => {
+    const param = new URLSearchParams(window.location.search)
+    screenId = param.get("s")
+
+    const div = document.getElementById("list")
+    if(div) {
+        div.innerHTML = await api("SHOW_LIST", {
+            token: localStorage.getItem("token"),
+        })
+    }
 }
 
 search()

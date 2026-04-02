@@ -15,6 +15,8 @@ $profil = new Profil($db);
 $viewer = new Viewer($db);
 $editor = new Editor($db);
 $manager = new Manager($db);
+$vue = new Vue($db);
+$screen = new Screen($db);
 
 $routes = [
     /* Controller Auth */
@@ -42,13 +44,21 @@ $routes = [
 
 
     /* Controller Viewer */
-    "VIEWER_GET" => function($req) use ($viewer, $auth) { //images page home
-        if($auth->verify($req["token"] ?? $_GET["token"] ?? null, 1)) {
+    "HTML_HOME" => function($req) use ($viewer, $screen, $vue) { //images page home
+
+        $items = $screen->getAll();
+        return $vue->content($items);
+    
+    
+    
+    
+    
+    if($auth->verify($req["token"] ?? $_GET["token"] ?? null, 1)) {
             return $viewer->get();
 
         } else {
             return [
-                "url" => "/login/"
+                //"url" => "/login/"
             ];
         }
         
@@ -134,7 +144,33 @@ $routes = [
 
     "MANAGE_SHOW" => function($req) use ($manager) {
         return $manager->show($req["token"] ?? $_GET["token"] ?? null);
-    }
+    },
+
+
+    "SHOW_CONTENT" => function($req) use ($vue) {
+        return $vue->renderContent();
+    },
+
+    "SHOW_SIDEBAR" => function($req) use ($vue) {
+        return $vue->renderSidebar($req["token"] ?? $_GET["token"] ?? null);
+    },
+
+    "SHOW_MAIN" => function($req) use ($vue) {
+        return $vue->renderMain();
+    },
+
+    "SHOW_LIST" => function($req) use ($vue) {
+        return $vue->renderList($req["screenId"] ?? $req["id"] ?? $_GET["id"]);
+    },
+
+
+
+
+
+
+
+
+
 ];
 
 function api($routes) {
