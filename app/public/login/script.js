@@ -8,10 +8,11 @@ const login = async () => {
     }
 
     const res = await api("AUTH_LOGIN", req)
+    showStatus(res)
 
     if(res.success) {
         localStorage.setItem("token", res.data.token)
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await new Promise(resolve => setTimeout(resolve, 1000))
         window.location.href = "./account/"
     }
 }

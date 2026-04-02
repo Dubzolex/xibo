@@ -1,4 +1,4 @@
-import { api } from "/js/client.js"
+import { api, showStatus } from "/js/client.js"
 import { isImage, isVideo } from "../js/utils/media.js"
 
 import { showMenu } from "/js/menu.js"
@@ -64,7 +64,10 @@ const show = async (media) => {
 }
 
 const search = async () => {
-    let res = await api("VIEWER_SHOW")
+    let res = await api("VIEWER_GET", {
+        token: localStorage.getItem("token")
+    })
+    showStatus(res)
     await show(res.data)
 }
 search()

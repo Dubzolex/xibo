@@ -58,18 +58,20 @@ const show = async (user) => {
 const logout = async () =>  {
     showStatus({ success: true, message: "Déconnexion..."})
     localStorage.removeItem("token")
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await new Promise(resolve => setTimeout(resolve, 1000))
     window.location.href = "../"
 }
 
 
+const search = async () => {
+    let res = await api("PROFIL_GET", {
+        token: localStorage.getItem("token")
+    })
 
-
-let res = await api("PROFIL_GET", {
-    token: localStorage.getItem("token")
-})
-
-if(res.success) {
-    show(res.data)
+    if(res.success) {
+        show(res.data)
+    }
+    showStatus(res)
 }
 
+search()

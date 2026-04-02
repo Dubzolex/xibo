@@ -26,15 +26,6 @@ $routes = [
         return $auth->disconnect();
     },
 
-    "AUTH_VERIFY" => function($req) use ($auth) {
-        return $auth->verify($req["token"] ?? $_GET["token"] ?? null);
-    },
-
-    "AUTH_SHOW" => function($req) use ($auth) {
-        return $auth->authorize($req["token"] ?? $_GET["token"] ?? null);
-    },
-
-
 
     /* Controller Profil */
     "PROFIL_GET" => function($req) use ($profil) {
@@ -51,8 +42,14 @@ $routes = [
 
 
     /* Controller Viewer */
-    "VIEWER_SHOW" => function($req) use ($viewer) {
+    "VIEWER_GET" => function($req) use ($viewer) { //images page home
+        //Verif token a faire
         return $viewer->get();
+    },
+
+    "VIEWER_SHOW" => function($req) use ($viewer) {
+        //menu
+        return $viewer->show($req["token"] ?? $_GET["token"] ?? null);
     },
 
 
@@ -66,9 +63,8 @@ $routes = [
     },
 
     "EDITOR_UPLOAD" => function() use ($editor) {
-        
         return $editor->upload($_POST["screenId"] ?? $_GET["id"] ?? null, $_FILES);
-},
+    },
 
     "EDITOR_DELETE" => function($req) use ($editor) {
         return $editor->delete($req["screenId"] ?? $req["id"] ?? $_GET["id"] ?? null, $req["images"] ?? []);
@@ -125,6 +121,12 @@ $routes = [
 
     "MANAGE_GET_SESSION" => function($req) use ($manager) {
         return $manager->getSessions();
+    },
+
+    /* Control Permissions */
+
+    "MANAGE_SHOW" => function($req) use ($manager) {
+        return $manager->show($req["token"] ?? $_GET["token"] ?? null);
     }
 ];
 

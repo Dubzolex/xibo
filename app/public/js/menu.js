@@ -1,7 +1,7 @@
 import { api } from "/js/client.js"
 
 export const showMenu = async () => {
-    let res = await api("AUTH_SHOW",{
+    let res = await api("VIEWER_SHOW",{
         token: localStorage.getItem("token")
     })
 

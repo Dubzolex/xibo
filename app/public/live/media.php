@@ -11,7 +11,7 @@ if (!$screen) {
 }
 
 // Chemin vers le dossier Ecran dans ton montage Docker/NAS
-$baseDir = __DIR__ . '/images'; // correspond à /var/www/html/images si monté
+$baseDir = __DIR__ . '/../images'; // correspond à /var/www/html/images si monté
 $dir = $baseDir . '/' . $screen;
 
 // Sécurité : vérifier que le dossier existe
@@ -29,4 +29,8 @@ $files = array_values(array_filter(scandir($dir), function ($f) use ($dir) {
         && preg_match('/\.(jpg|jpeg|png|mp4|webm)$/i', $f); // ajout vidéos
 }));
 
-echo json_encode($files);
+$result = [
+    "images" => $files
+];
+
+echo json_encode($result);

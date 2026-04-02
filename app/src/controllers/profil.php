@@ -40,8 +40,8 @@ public function get($token) {
 
     } catch(PDOException $e) {
         return [
-            "success"=> false,
-            "message"=> "Problème serveur.",
+            "success" => false,
+            "message" => "Problème serveur.",
             "error" => $e->getMessage()
         ];
     }
@@ -53,7 +53,9 @@ public function get($token) {
             return [
                 "success" => false,
                 "message" => "Session invalide.",
-                "user" => $user
+                "data" => [
+                    "user" => $user
+                ]
             ];
         }
 
@@ -73,10 +75,9 @@ public function get($token) {
 
     } catch(PDOException $e) {
         return [
-            "success"=> false,
-            "message"=> "Problème serveur.",
-            "error" => $e->getMessage(),
-            "token" => $token
+            "success" => false,
+            "message" => "Problème serveur.",
+            "error" => $e->getMessage()
         ];
     }
 }
@@ -142,7 +143,11 @@ public function edit($type) {
                 "html" => $htmlTop . $htmlPassword . $htmlBottom
             ];
             break;
-        
+
+        default:
+            return [
+                "url" => "/login/account/"
+            ];
     }
 }
 
@@ -150,18 +155,19 @@ public function save($token, $data) {
     try {
         if(isset($data["password"])) {
             $data["passwordChangedAt"] = date("Y-m-d H:i:s");
-        }    
+        }
+
+        $this->userModel->updateByToken($token, $data);
 
         return [
-            "success" => $this->userModel->updateByToken($token, $data),
-            "message" => "Profil enregistré.",
-            "data" => $data
+            "success" => true,
+            "message" => "Profil enregistré."
         ]; 
 
-    } catch (PDOException $e) {
+    } catch (Exception $e) {
         return [
             "success" => false,
-            "message"=> "Problème serveur.",
+            "message" => "Problème serveur.",
             "error" => $e->getMessage()
         ];
     }

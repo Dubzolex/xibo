@@ -16,11 +16,10 @@ const save = async () => {
     });
 
     let res = await api("PROFIL_SAVE", req)
-    console.log(res)
-
     showStatus(res)
+
     if(res.success) {
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        await new Promise(resolve => setTimeout(resolve, 1000))
         window.location.href = "../account/"
     }
 }
@@ -33,7 +32,9 @@ const search = async () => {
         type: param.get("edit")
     })
 
-    document.getElementById("content").innerHTML = res.html
+    showStatus(res)
+
+    document.getElementById("content").innerHTML = res.html ?? null
 
     const btn = document.getElementById("save")
     if(btn) {

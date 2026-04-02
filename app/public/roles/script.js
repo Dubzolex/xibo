@@ -2,6 +2,7 @@ import { api } from "/js/client.js"
 import { isImage, isVideo } from "../js/utils/media.js"
 
 import { showMenu } from "/js/menu.js"
+import { showStatus } from "/js/client.js"
 
 showMenu()
 
@@ -105,8 +106,7 @@ const uploadImage = async () => {
         });
 
         const data = await res.json();
-
-        console.log("Response:", data);
+        showStatus(data)
 
         search2()
 
@@ -118,16 +118,16 @@ const uploadImage = async () => {
 
 
 const deleteImage = async () => {
-    let res = await api("EDITOR_SHOW", {
+    let get = await api("EDITOR_SHOW", {
         token: localStorage.getItem("token"),
         screenId: screenId
     })
 
-    if(!res.success) return
+    if(!get.success) return
 
     let mediaSelected = []
 
-    for (let item of res.data) {
+    for (let item of get.data) {
         const box = document.getElementById(item)
 
         if (box && box.checked) {
@@ -145,10 +145,12 @@ const deleteImage = async () => {
         return
     }
 
-    await api("EDITOR_DELETE", {
+    let res = await api("EDITOR_DELETE", {
         screenId: screenId,
         images: mediaSelected
     })
+
+    showStatus(res)
 
     search2()
 }
@@ -175,8 +177,11 @@ const search = async () => {
 
     const param = new URLSearchParams(window.location.search)
     screenId = param.get("s")
-
-    await showScreen(res.data)
+    
+    if(res.data.length > 0) {
+        await showScreen(res.data)
+    }
+    
 
     if(!screenId) return
 
@@ -189,12 +194,15 @@ const search2 = async () => {
         token: localStorage.getItem("token"),
         screenId: screenId
     })
+
+    const div = document.getElementById("content")
     
-    if(res.html) {
-        document.getElementById("content").innerHTML = res.html ?? null
+    if(res.html && div && !div.innerHTML) {
+        div.innerHTML = res.html
         buttonAction() 
-        showImages(res.data)
     }
+
+    showImages(res.data)
 }
 
 search()

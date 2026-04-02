@@ -62,9 +62,9 @@ public function connect($email, $password) {
             "success" => false,
             "message" => "Mot de passe incorrect.",
             "data" => [
-                "send" => $password,
+                /*"send" => $password,
                 "send_hash" => password_hash($password, PASSWORD_DEFAULT),
-                "hash" => $user["password"]
+                "hash" => $user["password"]*/
             ]
         ];
 
@@ -81,88 +81,17 @@ public function disconnect($token = null) {
     return [];
 }
 
-public function verify($token, $role = 1) {
+public function verify($token, $critere) {
     try {
         $user = $this->userModel->verify($token);
 
-        if (!isset($user["id"])) {
-            return [
-                "success" => false,
-                "message" => "Token invalide.",
-                //"url" => "/login/",
-            ];
-        }
+        $role = $user["role_id"] ?? 0;
 
-        $role = $user["role_id"] ?? null;
-
-        return [
-            "success"=> true,
-            "message"=> "Utilisateur connecté.",
-            "data" => [
-                "role" => $role,
-                "user" => $user
-            ]
-        ];
-
+        return ($critere <= $role) && ($role <= 4);
+        
     } catch(Exception $e) {
-        return [
-            "success" => false,
-            "message" => "Problème serveur.",
-            "error" => $e->getMessage(),
-            "url" => "/login/",
-            "data" => [
-                "token" => $token
-            ]
-        ];
+        return false;
     }
-}
-
-public function authorize($token) {
-    try {
-        $user = $this->userModel->verify($token);
-
-        $role = $user["role_id"] ?? null;
-
-        return [
-            "html" => $this->show($role),
-            "data" => [
-                "role" => $role,
-                "user" => $user
-            ]
-        ];
-
-    } catch(Exception $e) {
-        return [
-            "success" => false,
-            "message" => "Problème serveur.",
-            "error" => $e->getMessage(),
-            "url" => "/login/",
-            "data" => [
-                "token" => $token
-            ]
-        ];
-    }
-}
-
-
-
-
-
-
-
-private function show($role) { 
-    $home = '<a href="/home/"><h4>Home</h4></a>';
-    $edit = '<a href="/roles/"><h4>Edit</h4></a>';
-    $profil = '<a href="/login/account/"><h4>Profil</h4></a>';
-    $manage = '<a href="/roles/manage/"><h4>Manage</h4></a>';
-
-    if($role == null) {
-        return null;
-    }
-    if($role > 1) {
-        return $home . $edit . $manage . $profil;
-    }
-    return $home . $edit . $profil;
 }
 
 }

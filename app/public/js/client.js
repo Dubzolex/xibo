@@ -9,12 +9,11 @@ export const api = async (action, req = {}) => {
 
     res = await res.json()
 
-    console.warn("")
-    console.log("Request:", req)
-    console.log("Action:", action)
-    console.log("Response:", res)
+    //console.warn("")
+    //console.log("Request:", req)
+    //console.log("Action:", action)
+    //console.log("Response:", res)
 
-    showStatus(res)
     return res
 }
 
@@ -30,9 +29,11 @@ export const showStatus = async (data, element = "status") => {
     }
 
     const div = document.getElementById(element)
-    if(div) {
+    
+    if(div && data.message) {
+        console.log(data)
         div.classList.remove("green", "red")
-        div.innerHTML = data.message ?? null
+        div.innerHTML = data.message
 
         if(data.success) {
             div.classList.add("green")
@@ -41,17 +42,7 @@ export const showStatus = async (data, element = "status") => {
             div.classList.add("red")
         }
 
-        await new Promise(resolve => setTimeout(resolve, 10000))
+        await new Promise(resolve => setTimeout(resolve, 6000))
         div.innerHTML = ""
-    }
-}
-
-export const verifySession = async () => {
-    let res = await api("AUTH_VERIFY", {
-        token: localStorage.getItem("token")
-    })
-
-    if(!res.success) {
-        window.location.href = "/login/"
     }
 }

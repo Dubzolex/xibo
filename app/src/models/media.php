@@ -74,9 +74,7 @@ public function upload($screenId, $files) {
                 ];
             }
 
-            // éviter collisions
-            $newName = uniqid() . "_" . $fileName;
-            $destination = $path . $newName;
+            $destination = $path . $fileName;
 
             if (!move_uploaded_file($tmpName, $destination)) {
                 return [
@@ -85,15 +83,12 @@ public function upload($screenId, $files) {
                 ];
             }
 
-            $uploadedFiles[] = $newName;
+            $uploadedFiles[] = $fileName;
         }
 
         return [
             "success" => true,
-            "message" => "Upload réussi",
-            "data" => [
-                "files" => $uploadedFiles
-            ]
+            "message" => "Chargement réussi.",
         ];
 
     } catch (Exception $e) {

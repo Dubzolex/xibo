@@ -6,12 +6,14 @@ private $userModel;
 private $screenModel;
 private $sessionModel;
 private $permissionModel;
+private $authModel;
 
 public function __construct($db) {
     $this->userModel = new User($db);
     $this->screenModel = new Screen($db);
     $this->sessionModel = new Session($db);
     $this->permissionModel = new Permission($db);
+    $this->authModel = new Auth($db);
 }
 
 
@@ -96,8 +98,6 @@ public function updateUser($id, $data) {
     } catch (PDOException $e) {
         return [
             "success"=> false,
-            "message"=> "Problème serveur. ici",
-            "id" => $id,
             "error"=> $e->getMessage()
         ];
     }
@@ -108,27 +108,28 @@ public function updateUser($id, $data) {
 public function resetUser(int $id) {
     if($id == null) {
             return [
-            "success" => false,
-            "message"=> "No user id."
+                "success" => false,
+                "message"=> "No user id."
         ];
     }
 
     try {
         $pwd = bin2hex(random_bytes(6));
         $data = [
-            "password" => $pwd,
+            "password" => password_hash($pwd, PASSWORD_DEFAULT),
             "password_changed_at" => null,
         ];
 
+        $this->userModel->reset($id, $data);
+
         return [
-            "success" => $this->userModel->reset($id, $data),
+            "success" => true,
             "alert" => "Nouveau mot de passe : " . $pwd
         ];
 
     } catch (PDOException $e) {
         return [
             "success" => false,
-            "message" => "Problème serveur.",
             "error" => $e->getMessage()
         ];
     }
@@ -176,7 +177,6 @@ public function getScreens() {
     } catch (PDOException $e) {
         return [
             "success"=> false,
-            "message"=> "Problème serveur.",
             "error"=> $e->getMessage()
         ];
     }
@@ -191,7 +191,6 @@ public function addScreen($data) {
     } catch (PDOException $e) {
         return [
             "success"=> false,
-            "message"=> "Problème serveur.",
             "error"=> $e->getMessage()
         ];
     }
@@ -212,8 +211,6 @@ public function updateScreen($id, $data) {
     } catch (PDOException $e) {
         return [
             "success"=> false,
-            "message"=> "Problème serveur.",
-            "id" => $id,
             "error"=> $e->getMessage()
         ];
     }
@@ -237,7 +234,6 @@ public function getPermissions() {
         </div>';
 
     try {
-        //
         $permissions = $this->permissionModel->getAll();
     
         $results = array_map(function($p) {
@@ -253,14 +249,13 @@ public function getPermissions() {
 
         return [
             "success" => true,
-            "html"=> $html,
+            "html" => $html,
             "data" => $results
         ];
 
     } catch (PDOException $e) {
         return [
             "success"=> false,
-            "message"=> "Problème serveur.",
             "error"=> $e->getMessage()
         ];
     }
@@ -279,7 +274,6 @@ public function addPermission($data) {
         } catch (PDOException $e) {
             return [
                 "success"=> false,
-                "message"=> "Problème serveur.",
                 "error"=> $e->getMessage()
             ];
         }
@@ -287,7 +281,6 @@ public function addPermission($data) {
     } catch (Exception $e) {
         return [
             "success"=> false,
-            "message"=> "Il manque des informations.",
             "error"=> $e->getMessage()
         ];
     }
@@ -304,7 +297,6 @@ public function deletePermission($id) {
     } catch (PDOException $e) {
         return [
             "success"=> false,
-            "message"=> "Problème serveur.",
             "error"=> $e->getMessage()
         ];
     }
@@ -340,8 +332,39 @@ public function getSessions() {
     } catch (PDOException $e) {
         return [
             "success"=> false,
-            "message"=> "Problème serveur.",
             "error"=> $e->getMessage()
+        ];
+    }
+}
+
+public function show($token) {
+    try {
+        $user = '<button id="user" class="link" >Users</button>';
+        $screen = '<button id="screen" class="link" >Screens</button>';
+        $permission = '<button id="permission" class="link" >Permissions</button>';
+        $session = '<button id="session" class="link" >Sessions</button>';
+
+        if($this->authModel->verify($token, 3)) {
+            return [
+                "html" => $user . $screen . $permission . $session
+            ];
+        }
+
+        if($this->authModel->verify($token, 3)) {
+            return [
+                "html" => $user . $permission . $session
+            ];
+        }
+
+        if($this->authModel->verify($token, 2)) {
+            return [
+                "html" => $permission
+            ];
+        }
+
+    } catch(Exception $e) {
+        return [
+            "url" => "404.html"
         ];
     }
 }

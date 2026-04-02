@@ -11,26 +11,28 @@
     </div>
     
 <script>
-let data = null
 
+let screenId = null
+let data = null
 const TRANSITION_DURATION = 500 // ms
+
 
 const initApp = async () => {
     try {
         const params = new URLSearchParams(window.location.search)
-        const id = params.get("s")
+        screenId = params.get("s") ?? 1
 
-        if (!id) {
-            window.location.href = "./"
-            return
+        if (!screenId) {
+            throw new Error("No screen selected")
         }
 
-        localStorage.setItem("screen", id)
+        localStorage.setItem("screen", screenId)
         await startLoop()
 
     } catch(e) {
-        noMediaFound()
-        await wait(1000000)
+        showMessage(e?.message || "Erreur inconnue")
+        await wait(30000)
+        window.location.reload()
     }
 }
 
@@ -42,8 +44,9 @@ const startLoop = async () => {
             await showMedia()
 
         } catch (e) {
-            console.error("Erreur dans la boucle d'affichage :", e)
-            await wait(10000)
+            console.error(e)
+            showMessage(e.message)
+            await wait(30000)
             window.location.reload()
         }
     }
@@ -51,35 +54,29 @@ const startLoop = async () => {
 
 const load = async () => {
     try {
-        const file = await fetch(`../backend/medias.php`, { cache: "no-store" })
+        const file = await fetch(`./media.php?dir=${screenId}`, { cache: "no-store" })
         data = await file.json()
-        //console.log("Data :", data)
-        await showMedia()
-
+        console.log(data)
     } catch (e) {
-        console.error(e)
+        throw new Error("Serveur problem: " + e.message)
     }
 }
 
 const showMedia = async () => {
     const container = document.getElementById("media")
-    const screen = data.find(s => s.id == localStorage.getItem("screen"))
     
-    if(!(screen && screen.images && (screen.images.length > 0))) {
-        noMediaFound()
-        await wait(10000)
-        return
-    }
-
     try {
-
-        if(screen.restart == 1) {
-            window.location.reload()
+        if (data.updating == 1) {
+            throw new Error("Screen is updating...")
         }
 
-        for (let item of screen.images) {
+        if(!(data && data.images && data.images.length > 0)) {
+            throw new Error("No media found (png, jpg, mp4...)")
+        }
+
+        for (let item of data.images) {
             try {
-                const url = `../images/${screen.id}/${item}`
+                const url = `../images/${screenId}/${item}`
         
                 if (await fileExists(url)) {
                         // IMAGE
@@ -87,7 +84,7 @@ const showMedia = async () => {
                         const img = document.createElement("img")
                         img.src = url
             
-                        await showElement(container, img, (screen.duration ?? 10) * 1000)
+                        await showElement(container, img, (data.duration ?? 10) * 1000)
                     }
             
                     // VIDEO
@@ -106,6 +103,7 @@ const showMedia = async () => {
                         })
             
                         await hideElement(video)
+                        await wait(1000)
                     }
                 }
         
@@ -115,10 +113,8 @@ const showMedia = async () => {
         }
 
     } catch(e) {
-        console.error(e)
+        throw e
     }
-
-    await wait(1000)
 }
 
 const addLogs = async (filename = null) => {
@@ -146,13 +142,8 @@ const hideElement = async (element) => {
     await wait(TRANSITION_DURATION)
 }
 
-const noMediaFound = () => {
-    try {
-        document.getElementById("media").innerHTML = `<p>No media found (png, jpg, mp4...)</p>`
-
-    } catch(e) {
-        console.error(e)
-    }
+const showMessage = (message) => {
+    document.getElementById("media").innerHTML = `<p>${message}</p>`
 }
 
 const fileExists = async (url) => {

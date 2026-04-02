@@ -1,3 +1,4 @@
+import { showStatus } from "/js/client.js"
 import { api } from "/js/client.js"
 import { showMenu } from "/js/menu.js"
 
@@ -27,7 +28,7 @@ const button = () => {
         }
     }
 }
-button()
+
 
 
 const showUser = async (users) => {
@@ -241,9 +242,10 @@ const addUser = async () => {
 
 const resetUser = async (u) => {
     if(confirm(`Réinitialiser le mot de passe de ${u.email} ?`)) {
-        await api("MANAGE_RESET_USER", {
+        let res = await api("MANAGE_RESET_USER", {
             id: u.id
         })
+        showStatus(res)
     }
     search()
 }
@@ -325,6 +327,9 @@ window.makeToggle= async (table, id, field, isChecked) => {
 }
 
 
+
+
+
 const search = async () => {
     const params = new URLSearchParams(window.location.search)
     const table = params.get("table")
@@ -346,4 +351,19 @@ const search = async () => {
     }
 
 }
-search()
+
+
+const init = async () => {
+    let res = await api("MANAGE_SHOW", {
+        token: localStorage.getItem("token")
+    })
+
+    const div = document.getElementById("list-screen")
+    if(div && res.html) {
+        div.innerHTML = res.html
+        await button()
+        await search()
+    }
+}
+
+init()

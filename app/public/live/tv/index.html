@@ -11,161 +11,165 @@
     </div>
 
 <script>
+
+var screenId = null;
 var data = null;
-var TRANSITION_DURATION = 500; // ms
+var TRANSITION_DURATION = 500;
+
 
 function initApp() {
     try {
         var params = new URLSearchParams(window.location.search);
-        var id = params.get("s");
+        screenId = params.get("s") || 1;
 
-        if (!id) {
-            window.location.href = "./";
-            return;
+        if (!screenId) {
+            throw new Error("No screen selected");
         }
 
-        localStorage.setItem("screen", id);
+        localStorage.setItem("screen", screenId);
         startLoop();
 
-    } catch(e) {
-        noMediaFound();
-        wait(1000000);
+    } catch (e) {
+        showMessage(e && e.message ? e.message : "Erreur inconnue");
+        wait(30000, function () {
+            window.location.reload();
+        });
     }
 }
 
 function startLoop() {
-    (function loop() {
-        load(function() {
-            addLogs(function() {
-                showMedia(function() {
-                    setTimeout(loop, 0);
+    function loop() {
+        try {
+            load(function (err) {
+                if (err) return handleError(err);
+
+                addLogs(function () {
+                    showMedia(function (err) {
+                        if (err) return handleError(err);
+                        loop(); // boucle infinie comme ES6
+                    });
                 });
             });
-        });
-    })();
+        } catch (e) {
+            handleError(e);
+        }
+    }
+
+    loop();
+}
+
+function handleError(e) {
+    console.error(e);
+    showMessage(e && e.message ? e.message : "Erreur inconnue");
+
+    wait(30000, function () {
+        window.location.reload();
+    });
 }
 
 function load(callback) {
     try {
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "../backend/medias.php", true);
+        xhr.open("GET", "../media.php?dir=" + screenId, true);
         xhr.setRequestHeader("Cache-Control", "no-store");
-        xhr.onreadystatechange = function() {
+
+        xhr.onreadystatechange = function () {
             if (xhr.readyState === 4) {
                 if (xhr.status === 200) {
                     try {
                         data = JSON.parse(xhr.responseText);
-                        showMedia(callback);
-                    } catch(e) {
-                        console.error(e);
                         callback();
+                    } catch (e) {
+                        callback(new Error("JSON invalide"));
                     }
                 } else {
-                    console.error("Erreur lors du chargement des médias");
-                    callback();
+                    callback(new Error("Erreur serveur"));
                 }
             }
         };
+
         xhr.send();
     } catch (e) {
-        console.error(e);
-        callback();
+        callback(new Error("Serveur problem: " + e.message));
     }
 }
 
 function showMedia(callback) {
     var container = document.getElementById("media");
-    var screenId = localStorage.getItem("screen");
-    var screen = null;
 
-    if (data && data.length > 0) {
-        for (var i=0; i<data.length; i++) {
-            if (data[i].id == screenId) {
-                screen = data[i];
-                break;
-            }
-        }
-    }
-
-    if (!(screen && screen.images && screen.images.length > 0)) {
-        noMediaFound();
-        return wait(10000, callback);
-    }
-
-    if (screen.restart == 1) {
-        window.location.reload();
-        return;
-    }
-
-    (function showNext(index) {
-        if (index >= screen.images.length) {
-            return wait(1000, callback);
+    try {
+        if (data && data.updating == 1) {
+            return callback(new Error("Screen is updating..."));
         }
 
-        var item = screen.images[index];
-        var url = "../images/" + screen.id + "/" + item;
+        if (!(data && data.images && data.images.length > 0)) {
+            return callback(new Error("No media found (png, jpg, mp4...)"));
+        }
 
-        fileExists(url, function(exists) {
-            if (!exists) {
-                showNext(index + 1);
-                return;
+        var i = 0;
+
+        function next() {
+            if (i >= data.images.length) {
+                return callback();
             }
 
-            // IMAGE
-            if (item.match(/\.(png|jpg|jpeg)$/i)) {
-                var img = document.createElement("img");
-                img.src = url;
-                showElement(container, img, (screen.duration || 10) * 1000, function() {
-                    showNext(index + 1);
-                });
-            }
+            var item = data.images[i++];
+            var url = "../../images/" + screenId + "/" + item;
 
-            // VIDEO
-            else if (item.match(/\.(mp4)$/i)) {
-                var video = document.createElement("video");
-                video.src = url;
-                video.autoplay = true;
-                video.muted = true;
-                video.playsInline = true;
+            fileExists(url, function (exists) {
+                if (!exists) return next();
 
-                showElement(container, video, 0, function() {
-                    video.onended = video.onerror = function() {
-                        hideElement(video, function() {
-                            showNext(index + 1);
-                        });
-                    };
-                });
-            } else {
-                showNext(index + 1);
-            }
-        });
+                // IMAGE
+                if (item.match(/\.(png|jpg|jpeg)$/i)) {
+                    var img = document.createElement("img");
+                    img.src = url;
 
-    })(0);
+                    showElement(container, img, (data.duration || 10) * 1000, next);
+                }
+
+                // VIDEO
+                else if (item.match(/\.(mp4)$/i)) {
+                    var video = document.createElement("video");
+                    video.src = url;
+                    video.autoplay = true;
+                    video.muted = true;
+                    video.playsInline = true;
+
+                    showElement(container, video, 0, function () {
+                        video.onended = video.onerror = function () {
+                            hideElement(video, function () {
+                                wait(1000, next);
+                            });
+                        };
+                    });
+                } else {
+                    next();
+                }
+            });
+        }
+
+        next();
+
+    } catch (e) {
+        callback(e);
+    }
 }
 
-function addLogs(filename, callback) {
-    if (!callback && typeof filename === "function") {
-        callback = filename;
-    }
+function addLogs(callback) {
     if (callback) callback();
 }
 
 function showElement(container, element, duration, callback) {
-    if (!callback && typeof duration === "function") {
-        callback = duration;
-        duration = 0;
-    }
-
     container.innerHTML = "";
     container.appendChild(element);
+
     element.className += " media-item";
 
-    // Force repaint
-    element.offsetHeight;
+    element.offsetHeight; // repaint
     element.className += " show";
 
     if (duration > 0) {
-        wait(duration, function() {
+        wait(duration, function () {
             hideElement(element, callback);
         });
     } else if (callback) {
@@ -178,31 +182,35 @@ function hideElement(element, callback) {
     wait(TRANSITION_DURATION, callback);
 }
 
-function noMediaFound() {
-    try {
-        document.getElementById("media").innerHTML = '<p>No media found (png, jpg, mp4...)</p>';
-    } catch(e) {
-        console.error(e);
-    }
+function showMessage(message) {
+    document.getElementById("media").innerHTML = "<p>" + message + "</p>";
 }
 
 function fileExists(url, callback) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("HEAD", url, true);
-    xhr.setRequestHeader("Cache-Control", "no-store");
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            callback(xhr.status >= 200 && xhr.status < 300);
-        }
-    };
-    xhr.send();
+    try {
+        var xhr = new XMLHttpRequest();
+        xhr.open("HEAD", url, true);
+        xhr.setRequestHeader("Cache-Control", "no-store");
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                callback(xhr.status >= 200 && xhr.status < 300);
+            }
+        };
+
+        xhr.send();
+    } catch (e) {
+        console.warn(e);
+        callback(false);
+    }
 }
 
 function wait(ms, callback) {
-    setTimeout(callback || function(){}, ms);
+    setTimeout(callback || function () {}, ms);
 }
 
 initApp();
+
 </script>
 
 <style>
