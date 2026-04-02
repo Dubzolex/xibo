@@ -1,0 +1,7 @@
+/media/*
+!/media/.gitkeep
+
+*.png
+*.jpg
+*.jpeg
+*.mp4
