@@ -1,9 +1,6 @@
-
-
-
 <?php if (isset($data)): ?>
-    <?php foreach ($data as $m): ?>
 
+    <?php foreach ($data as $m): ?>
         <div class="fx-col ai-center gap-10">
             <?php $url = "../images/$screenId/$m";?>
 
@@ -21,7 +18,6 @@
                 <p><?= $m ?></p>
             </div>
         </div>
-
     <?php endforeach; ?>
 
 <?php else: ?>

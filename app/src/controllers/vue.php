@@ -2,11 +2,17 @@
 
 class Vue {
 
+private $userModel;
 private $screenModel;
+private $permissionModel;
+private $sessionModel;
 private $mediaModel;
 
 public function __construct($db) {
+    $this->userModel = new User($db);
     $this->screenModel = new Screen($db);
+    $this->permissionModel = new Permission($db);
+    $this->sessionModel = new Session($db);
     $this->mediaModel = new Media($db);
 }
 
@@ -88,6 +94,124 @@ public function renderList($screenId) {
         "data" => $data,
     ];
 }
+
+
+
+
+
+
+
+
+
+public function renderAdmin($token) {
+
+
+    $role = 2;
+
+    ob_start();
+    include __DIR__ . '/../templates/admin.content.php';
+    return [
+        "html" => ob_get_clean()
+    ];
+}
+
+
+public function renderUser($role) {
+    $data = $this->userModel->getAll();
+
+    ob_start();
+    include __DIR__ . '/../templates/admin.user.php';
+    return [
+        "html" => ob_get_clean(),
+    ];
+}
+
+public function renderScreen($role) {
+    $data = $this->screenModel->getAll();
+
+    ob_start();
+    include __DIR__ . '/../templates/admin.screen.php';
+    return [
+        "html" => ob_get_clean(),
+    ];
+}
+
+public function renderPermission($role) {
+    $data = $this->permissionModel->getAll();
+    $users = $this->userModel->getAll();
+    $screens = $this->screenModel->getAll();
+
+    ob_start();
+    include __DIR__ . '/../templates/admin.permission.php';
+    return [
+        "html" => ob_get_clean(),
+    ];
+}
+
+public function renderSession($role) {
+    $data = $this->sessionModel->getAll();
+
+    ob_start();
+    include __DIR__ . '/../templates/admin.session.php';
+    return [
+        "html" => ob_get_clean(),
+    ];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*

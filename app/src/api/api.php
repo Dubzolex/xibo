@@ -147,6 +147,8 @@ $routes = [
     },
 
 
+
+
     "SHOW_CONTENT" => function($req) use ($vue) {
         return $vue->renderContent();
     },
@@ -163,12 +165,30 @@ $routes = [
         return $vue->renderList($req["screenId"] ?? $req["id"] ?? $_GET["id"]);
     },
 
+    "SHOW_ADMIN" => function($req) use ($vue) {
+        return $vue->renderAdmin("token a recuperer");
+    },
 
+    "SHOW_TABLE" => function($req) use ($vue) {
+        $role = 3;
 
+        switch($req["table"] ?? $_GET["table"] ?? null) {
+            case "user":
+                return $vue->renderUser($role);
 
+            case "screen":
+                return $vue->renderScreen($role);
 
+            case "permission":
+                return $vue->renderPermission($role);
 
-
+            case "session":
+                return $vue->renderSession($role);
+            
+            default:
+                return [];
+        }
+    },
 
 
 ];
