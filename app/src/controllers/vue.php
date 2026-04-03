@@ -41,7 +41,7 @@ public function content($res) {
     ob_start();
     // On inclut le fichier de template
     // Le template aura accès à $data et à $this (la classe Vue)
-    include __DIR__ . '/../templates/home.content.php';
+    include __DIR__ . '/../templates/main.content.php';
     return ob_get_clean();
 }
 
@@ -55,7 +55,7 @@ public function renderContent() {
     }
 
     ob_start();
-    include __DIR__ . '/../templates/home.content.php';
+    include __DIR__ . '/../templates/main.content.php';
     return ob_get_clean();
 }
 
@@ -63,25 +63,30 @@ public function renderSidebar($token) {
     $data = $this->screenModel->getByToken($token);
 
     ob_start();
-    include __DIR__ . '/../templates/home.sidebar.php';
+    include __DIR__ . '/../templates/main.sidebar.php';
     return [
         "html" => ob_get_clean(),
         "data" => $data,
     ];
 }
 
-public function renderMain() {
+public function renderTool() {
     ob_start();
-    include __DIR__ . '/../templates/home.main.php';
-    return ob_get_clean();
+    include __DIR__ . '/../templates/main.tool.php';
+    return [
+        "html" => ob_get_clean(),
+    ];
 }
 
 public function renderList($screenId) {
     $data = $this->mediaModel->get($screenId);
 
     ob_start();
-    include __DIR__ . '/../templates/home.list.php';
-    return ob_get_clean();
+    include __DIR__ . '/../templates/main.list.php';
+    return [
+        "html" => ob_get_clean(),
+        "data" => $data,
+    ];
 }
 
 

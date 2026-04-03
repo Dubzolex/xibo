@@ -140,25 +140,29 @@ const search = async () => {
 }
 
 const search2 = async () => {
-    const div = document.getElementById("main")
+    const div = document.getElementById("tool")
     if(div) {
-        div.innerHTML = await api("SHOW_MAIN", {
+        let res = await api("SHOW_TOOL", {
             token: localStorage.getItem("token"),
         })
+
+        div.innerHTML = res.html
         
         search3()
     }
 }
 
 const search3 = async () => {
-    const param = new URLSearchParams(window.location.search)
-    screenId = param.get("s")
-
     const div = document.getElementById("list")
     if(div) {
-        div.innerHTML = await api("SHOW_LIST", {
+        let res = await api("SHOW_LIST", {
             token: localStorage.getItem("token"),
+            screenId
         })
+
+        console.log(res)
+
+        div.innerHTML = res.html
     }
 }
 

@@ -155,8 +155,8 @@ $routes = [
         return $vue->renderSidebar($req["token"] ?? $_GET["token"] ?? null);
     },
 
-    "SHOW_MAIN" => function($req) use ($vue) {
-        return $vue->renderMain();
+    "SHOW_TOOL" => function($req) use ($vue) {
+        return $vue->renderTool();
     },
 
     "SHOW_LIST" => function($req) use ($vue) {
