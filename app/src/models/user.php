@@ -65,7 +65,7 @@ public function delete($id) {
 }
 
 public function getAll() {
-    $sql = "SELECT users.id, users.name, users.email, roles.role, created_at, updated_at, password_changed_at, users.password FROM users LEFT JOIN roles ON users.role_id = roles.id";
+    $sql = "SELECT users.id, users.name, users.email, roles.role, users.role_id, created_at, updated_at, password_changed_at, users.password FROM users LEFT JOIN roles ON users.role_id = roles.id";
 
     return $this->db->fetchAll($sql);
 }

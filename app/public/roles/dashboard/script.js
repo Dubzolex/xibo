@@ -163,7 +163,7 @@ const search2 = async () => {
     if(!table) {
         return
     }
-    console.log(table)
+    //console.log(table)
 
     const div = document.getElementById("main")
     if(div) {
